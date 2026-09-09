@@ -1,0 +1,17 @@
+{
+  "watch": [
+    "index.js",
+    "db.js",
+    "cloudinaryConfig.js",
+    "routes/",
+    "models/"
+  ],
+  "ext": "js,mjs,cjs,json",
+  "ignore": [
+    "node_modules/*",
+    "uploads/*",
+    "__rzi_*",
+    "*.zip",
+    "*.tmp"
+  ]
+}
