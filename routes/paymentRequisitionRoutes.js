@@ -43,6 +43,11 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Requisition not found' });
         }
 
+        const role = req.headers['x-user-role'];
+        if (role === 'staff' && req.body.status === 'Partially Approved') {
+            return res.status(403).json({ message: 'Staff members are only allowed to fully approve or reject requisitions.' });
+        }
+
         const previousStatus = requisition.status;
         const newStatus = req.body.status;
         const approvedAmount = req.body.approvedAmount || 0;

@@ -95,7 +95,7 @@ const defaultPanTabsConfig = [
     badge: 'Form 49A Physical',
     description: 'Detailed manual PAN Application with Photo & Signature Upload support.',
     fields: [
-      { name: 'category', label: 'CATEGORY OF APPLICANT', type: 'select', options: ['INDIVIDUAL', 'FIRM', 'BODY OF INDIVIDUALS', 'TRUST', 'ASSOCIATION OF PERSONS', 'LOCAL AUTHORITY'], required: true, hidden: false },
+      { name: 'category', label: 'CATEGORY OF APPLICANT', type: 'select', options: ['INDIVIDUAL', 'FIRM', 'BODY OF INDIVIDUALS', 'TRUST', 'ASSOCIATION OF PERSONS', 'LOCAL AUTHORITY', 'COMPANY', 'HINDU UNDIVIDED FAMILY', 'LIMITED LIABILITY PARTNERSHIP', 'ARTIFICIAL JURIDICAL PERSON', 'GOVERNMENT'], required: true, hidden: false },
       { name: 'aadhaarNumber', label: 'AADHAAR NO', type: 'text', placeholder: '12 DIGITS UID NO', required: true, hidden: false },
       { name: 'proofOfDob', label: 'PROOF OF DOB', type: 'select', options: ['ABHA HEALTH GOVT ID CARD (CENTRAL GOVT)', 'AADHAAR CARD ISSUED BY UIDAI', 'BIRTH CERTIFICATE ISSUED BY MUNICIPALITY', 'MATRICULATION / 10TH PASSING CERTIFICATE', 'PASSPORT', 'DRIVING LICENSE'], required: true, hidden: false },
       { name: 'title', label: 'TITLE', type: 'select', options: ['SELECT', 'SHRI', 'SMT', 'KUMARI'], required: true, hidden: false },

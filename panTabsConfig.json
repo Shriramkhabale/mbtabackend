@@ -8,26 +8,11 @@
     "description": "Detailed manual PAN Application with Photo & Signature Upload support.",
     "fields": [
       {
-        "name": "category",
-        "label": "CATEGORY OF APPLICANT",
-        "type": "select",
-        "options": [
-          "INDIVIDUAL",
-          "FIRM",
-          "BODY OF INDIVIDUALS",
-          "TRUST",
-          "ASSOCIATION OF PERSONS",
-          "LOCAL AUTHORITY"
-        ],
-        "required": true,
-        "hidden": false
-      },
-      {
-        "name": "aadhaarNumber",
-        "label": "AADHAAR NO",
+        "name": "firstName",
+        "label": "FIRST NAME",
         "type": "text",
-        "placeholder": "12 DIGITS UID NO",
-        "required": true,
+        "placeholder": "FIRST NAME",
+        "required": false,
         "hidden": false
       },
       {
@@ -46,6 +31,14 @@
         "hidden": false
       },
       {
+        "name": "aadhaarNumber",
+        "label": "AADHAAR NO",
+        "type": "text",
+        "placeholder": "12 DIGITS UID NO",
+        "required": true,
+        "hidden": false
+      },
+      {
         "name": "title",
         "label": "TITLE",
         "type": "select",
@@ -59,27 +52,31 @@
         "hidden": false
       },
       {
-        "name": "lastName",
-        "label": "LAST NAME / SURNAME",
-        "type": "text",
-        "placeholder": "LAST NAME / SURNAME",
-        "required": true,
-        "hidden": false
-      },
-      {
-        "name": "firstName",
-        "label": "FIRST NAME",
-        "type": "text",
-        "placeholder": "FIRST NAME",
-        "required": false,
-        "hidden": false
-      },
-      {
         "name": "middleName",
         "label": "MIDDLE NAME",
         "type": "text",
         "placeholder": "MIDDLE NAME",
         "required": false,
+        "hidden": false
+      },
+      {
+        "name": "category",
+        "label": "CATEGORY OF APPLICANT",
+        "type": "select",
+        "options": [
+          "INDIVIDUAL",
+          "FIRM",
+          "BODY OF INDIVIDUALS",
+          "TRUST",
+          "ASSOCIATION OF PERSONS",
+          "LOCAL AUTHORITY",
+          "COMPANY",
+          "HINDU UNDIVIDED FAMILY",
+          "LIMITED LIABILITY PARTNERSHIP",
+          "ARTIFICIAL JURIDICAL PERSON",
+          "GOVERNMENT"
+        ],
+        "required": true,
         "hidden": false
       },
       {
@@ -90,6 +87,14 @@
           "NO",
           "YES"
         ],
+        "required": true,
+        "hidden": false
+      },
+      {
+        "name": "lastName",
+        "label": "LAST NAME / SURNAME",
+        "type": "text",
+        "placeholder": "LAST NAME / SURNAME",
         "required": true,
         "hidden": false
       },

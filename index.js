@@ -26,6 +26,7 @@ const walletTransactionRoutes = require('./routes/walletTransactionRoutes');
 const directPaymentRoutes = require('./routes/directPaymentRoutes');
 const panCardRoutes = require('./routes/panCardRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const staffRoutes = require('./routes/staffRoutes');
 
 const path = require('path');
 
@@ -50,6 +51,7 @@ app.use('/api/wallet-transactions', walletTransactionRoutes);
 app.use('/api/direct-payment', directPaymentRoutes);
 app.use('/api/pancard', panCardRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/staff', staffRoutes);
 
 // Callback forwarder for PaySprint's configured URL
 app.post('/UpiCollectionCallback.aspx', (req, res) => {
