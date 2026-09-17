@@ -95,36 +95,67 @@ const defaultPanTabsConfig = [
     badge: 'Form 49A Physical',
     description: 'Detailed manual PAN Application with Photo & Signature Upload support.',
     fields: [
-      { name: 'category', label: 'CATEGORY OF APPLICANT', type: 'select', options: ['INDIVIDUAL', 'FIRM', 'BODY OF INDIVIDUALS', 'TRUST', 'ASSOCIATION OF PERSONS', 'LOCAL AUTHORITY', 'COMPANY', 'HINDU UNDIVIDED FAMILY', 'LIMITED LIABILITY PARTNERSHIP', 'ARTIFICIAL JURIDICAL PERSON', 'GOVERNMENT'], required: true, hidden: false },
-      { name: 'aadhaarNumber', label: 'AADHAAR NO', type: 'text', placeholder: '12 DIGITS UID NO', required: true, hidden: false },
-      { name: 'proofOfDob', label: 'PROOF OF DOB', type: 'select', options: ['ABHA HEALTH GOVT ID CARD (CENTRAL GOVT)', 'AADHAAR CARD ISSUED BY UIDAI', 'BIRTH CERTIFICATE ISSUED BY MUNICIPALITY', 'MATRICULATION / 10TH PASSING CERTIFICATE', 'PASSPORT', 'DRIVING LICENSE'], required: true, hidden: false },
-      { name: 'title', label: 'TITLE', type: 'select', options: ['SELECT', 'SHRI', 'SMT', 'KUMARI'], required: true, hidden: false },
-      { name: 'lastName', label: 'LAST NAME / SURNAME', type: 'text', placeholder: 'LAST NAME / SURNAME', required: true, hidden: false },
-      { name: 'firstName', label: 'FIRST NAME', type: 'text', placeholder: 'FIRST NAME', required: false, hidden: false },
-      { name: 'middleName', label: 'MIDDLE NAME', type: 'text', placeholder: 'MIDDLE NAME', required: false, hidden: false },
-      { name: 'isSingleParent', label: 'WHETHER MOTHER/FATHER IS A SINGLE PARENT', type: 'select', options: ['NO', 'YES'], required: true, hidden: false },
-      { name: 'fatherLastName', label: "FATHER'S LAST NAME", type: 'text', placeholder: 'FATHER LAST NAME', required: false, hidden: false },
-      { name: 'fatherFirstName', label: "FATHER'S FIRST NAME", type: 'text', placeholder: 'FATHER FIRST NAME', required: false, hidden: false },
-      { name: 'fatherMiddleName', label: "FATHER'S MIDDLE NAME", type: 'text', placeholder: 'FATHER MIDDLE NAME', required: false, hidden: false },
-      { name: 'motherLastName', label: "MOTHER'S LAST NAME", type: 'text', placeholder: 'MOTHER LAST NAME', required: false, hidden: false },
-      { name: 'motherFirstName', label: "MOTHER'S FIRST NAME", type: 'text', placeholder: 'MOTHER FIRST NAME', required: false, hidden: false },
-      { name: 'motherMiddleName', label: "MOTHER'S MIDDLE NAME", type: 'text', placeholder: 'MOTHER MIDDLE NAME', required: false, hidden: false },
-      { name: 'nameAsPerAadhaar', label: 'NAME AS PER AADHAAR', type: 'text', placeholder: 'NAME AS PER AADHAAR', required: true, hidden: false },
-      { name: 'gender', label: 'GENDER', type: 'select', options: ['SELECT', 'MALE', 'FEMALE', 'TRANSGENDER'], required: true, hidden: false },
-      { name: 'dob', label: 'DATE OF BIRTH', type: 'date', required: true, hidden: false },
-      { name: 'mobileNumber', label: 'MOBILE NO.', type: 'tel', placeholder: 'MOBILE NO.', required: true, hidden: false },
-      { name: 'email', label: 'EMAIL ID', type: 'email', placeholder: 'EMAIL ID', required: true, hidden: false },
-      { name: 'flatNo', label: 'FLAT/DOOR/BLOCK NO', type: 'text', placeholder: 'FLAT/DOOR/BLOCK NO', required: true, hidden: false },
-      { name: 'premises', label: 'PREMISES/BUILDING/VILLAGE', type: 'text', placeholder: 'PREMISES/BUILDING/VILLAGE', required: true, hidden: false },
-      { name: 'roadStreet', label: 'ROAD/STREET/POST OFFICE', type: 'text', placeholder: 'ROAD/STREET/LANE/POST OFFICE', required: true, hidden: false },
-      { name: 'areaTaluka', label: 'AREA/TALUKA/SUB DIVISION', type: 'text', placeholder: 'AREA/TALUKA/SUB DIVISION', required: true, hidden: false },
-      { name: 'state', label: 'STATE', type: 'select', options: ['PLEASE SELECT', 'MAHARASHTRA', 'KARNATAKA', 'GUJARAT', 'DELHI', 'UTTAR PRADESH', 'MADHYA PRADESH', 'TAMIL NADU'], required: true, hidden: false },
-      { name: 'district', label: 'TOWN/DISTRICT', type: 'select', options: ['SELECT', 'MUMBAI', 'PUNE', 'NAGPUR', 'THANE', 'BANGALORE', 'KOLHAPUR'], required: true, hidden: false },
-      { name: 'pincode', label: 'PINCODE', type: 'text', placeholder: 'PINCODE', required: true, hidden: false },
-      { name: 'proofOfIdentity', label: 'PROOF OF IDENTITY', type: 'select', options: ['AADHAAR CARD ISSUED BY THE UNIQUE IDENTIFICATION AUTHORITY OF INDIA', 'VOTER ID CARD', 'PASSPORT', 'DRIVING LICENSE'], required: true, hidden: false },
-      { name: 'proofOfAddress', label: 'PROOF OF ADDRESS', type: 'select', options: ['AADHAAR CARD ISSUED BY THE UNIQUE IDENTIFICATION AUTHORITY OF INDIA', 'VOTER ID CARD', 'PASSPORT', 'ELECTRICITY BILL'], required: true, hidden: false },
-      { name: 'photoUrl', label: 'Upload Applicant Photo', type: 'file', required: false, hidden: false },
-      { name: 'signatureUrl', label: 'Upload Applicant Signature', type: 'file', required: false, hidden: false }
+      { name: 'category', label: 'CATEGORY OF APPLICANT', type: 'select', options: ['INDIVIDUAL', 'FIRM', 'BODY OF INDIVIDUALS', 'TRUST', 'ASSOCIATION OF PERSONS', 'LOCAL AUTHORITY', 'COMPANY', 'HINDU UNDIVIDED FAMILY', 'LIMITED LIABILITY PARTNERSHIP', 'ARTIFICIAL JURIDICAL PERSON', 'GOVERNMENT'], required: true, hidden: false, formType: 'Both' },
+      { name: 'aadhaarNumber', label: 'AADHAAR NO', type: 'text', placeholder: '12 DIGITS UID NO', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'proofOfDob', label: 'PROOF OF DOB', type: 'select', options: ['ABHA HEALTH GOVT ID CARD (CENTRAL GOVT)', 'AADHAAR CARD ISSUED BY UIDAI', 'BIRTH CERTIFICATE ISSUED BY MUNICIPALITY', 'MATRICULATION / 10TH PASSING CERTIFICATE', 'PASSPORT', 'DRIVING LICENSE'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'title', label: 'TITLE', type: 'select', options: ['SELECT', 'SHRI', 'SMT', 'KUMARI'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'lastName', label: 'LAST NAME / SURNAME', type: 'text', placeholder: 'LAST NAME / SURNAME', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'firstName', label: 'FIRST NAME', type: 'text', placeholder: 'FIRST NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'middleName', label: 'MIDDLE NAME', type: 'text', placeholder: 'MIDDLE NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'isSingleParent', label: 'WHETHER MOTHER/FATHER IS A SINGLE PARENT', type: 'select', options: ['NO', 'YES'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'fatherLastName', label: "FATHER'S LAST NAME", type: 'text', placeholder: 'FATHER LAST NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'fatherFirstName', label: "FATHER'S FIRST NAME", type: 'text', placeholder: 'FATHER FIRST NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'fatherMiddleName', label: "FATHER'S MIDDLE NAME", type: 'text', placeholder: 'FATHER MIDDLE NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'motherLastName', label: "MOTHER'S LAST NAME", type: 'text', placeholder: 'MOTHER LAST NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'motherFirstName', label: "MOTHER'S FIRST NAME", type: 'text', placeholder: 'MOTHER FIRST NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'motherMiddleName', label: "MOTHER'S MIDDLE NAME", type: 'text', placeholder: 'MOTHER MIDDLE NAME', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'nameAsPerAadhaar', label: 'NAME AS PER AADHAAR', type: 'text', placeholder: 'NAME AS PER AADHAAR', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'gender', label: 'GENDER', type: 'select', options: ['SELECT', 'MALE', 'FEMALE', 'TRANSGENDER'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'dob', label: 'DATE OF BIRTH', type: 'date', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'mobileNumber', label: 'MOBILE NO.', type: 'tel', placeholder: 'MOBILE NO.', required: true, hidden: false, formType: 'Both' },
+      { name: 'email', label: 'EMAIL ID', type: 'email', placeholder: 'EMAIL ID', required: true, hidden: false, formType: 'Both' },
+      { name: 'flatNo', label: 'FLAT/DOOR/BLOCK NO', type: 'text', placeholder: 'FLAT/DOOR/BLOCK NO', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'premises', label: 'PREMISES/BUILDING/VILLAGE', type: 'text', placeholder: 'PREMISES/BUILDING/VILLAGE', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'roadStreet', label: 'ROAD/STREET/POST OFFICE', type: 'text', placeholder: 'ROAD/STREET/LANE/POST OFFICE', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'areaTaluka', label: 'AREA/TALUKA/SUB DIVISION', type: 'text', placeholder: 'AREA/TALUKA/SUB DIVISION', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'state', label: 'STATE', type: 'select', options: ['PLEASE SELECT', 'MAHARASHTRA', 'KARNATAKA', 'GUJARAT', 'DELHI', 'UTTAR PRADESH', 'MADHYA PRADESH', 'TAMIL NADU'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'district', label: 'TOWN/DISTRICT', type: 'select', options: ['SELECT', 'MUMBAI', 'PUNE', 'NAGPUR', 'THANE', 'BANGALORE', 'KOLHAPUR'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'pincode', label: 'PINCODE', type: 'text', placeholder: 'PINCODE', required: true, hidden: false, formType: 'Form 93' },
+      { name: 'proofOfIdentity', label: 'PROOF OF IDENTITY', type: 'select', options: ['AADHAAR CARD ISSUED BY THE UNIQUE IDENTIFICATION AUTHORITY OF INDIA', 'VOTER ID CARD', 'PASSPORT', 'DRIVING LICENSE'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'proofOfAddress', label: 'PROOF OF ADDRESS', type: 'select', options: ['AADHAAR CARD ISSUED BY THE UNIQUE IDENTIFICATION AUTHORITY OF INDIA', 'VOTER ID CARD', 'PASSPORT', 'ELECTRICITY BILL'], required: true, hidden: false, formType: 'Form 93' },
+      { name: 'photoUrl', label: 'Upload Applicant Photo', type: 'file', required: false, hidden: false, formType: 'Form 93' },
+      { name: 'signatureUrl', label: 'Upload Applicant Signature', type: 'file', required: false, hidden: false, formType: 'Form 93' },
+      // Form 94 (Non-Individual / Other Entities) Fields
+      { name: 'entityName', label: 'NAME OF FIRM / COMPANY / TRUST / ENTITY (FORM 94)', type: 'text', placeholder: 'NAME OF ENTITY / FIRM', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'dateOfIncorporation', label: 'DATE OF INCORPORATION / AGREEMENT / FORMATION (FORM 94)', type: 'date', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'registrationNumber', label: 'REGISTRATION NUMBER (IF ANY) (FORM 94)', type: 'text', placeholder: 'REGISTRATION NUMBER', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'incomeSource', label: 'SOURCE OF INCOME (FORM 94)', type: 'select', options: ['Income from Business/Profession', 'Salary', 'Capital Gains', 'Income from House Property', 'Income from Other Sources', 'No Income'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'proofOfIncorporation', label: 'PROOF OF INCORPORATION / REGISTRATION (FORM 94)', type: 'select', options: ['CERTIFICATE OF INCORPORATION / REGISTRATION', 'PARTNERSHIP DEED', 'TRUST DEED / AGREEMENT', 'REGISTRATION CERTIFICATE'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commFlatNo', label: 'OFFICE FLAT/DOOR/BLOCK NO (FORM 94)', type: 'text', placeholder: 'OFFICE FLAT NO', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commPremises', label: 'OFFICE PREMISES/BUILDING/VILLAGE (FORM 94)', type: 'text', placeholder: 'OFFICE PREMISES', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commRoadStreet', label: 'OFFICE ROAD/STREET/POST OFFICE (FORM 94)', type: 'text', placeholder: 'OFFICE ROAD STREET', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commAreaTaluka', label: 'OFFICE AREA/TALUKA/SUB DIVISION (FORM 94)', type: 'text', placeholder: 'OFFICE AREA TALUKA', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commState', label: 'OFFICE STATE (FORM 94)', type: 'select', options: ['PLEASE SELECT', 'MAHARASHTRA', 'KARNATAKA', 'GUJARAT', 'DELHI', 'UTTAR PRADESH', 'MADHYA PRADESH', 'TAMIL NADU'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commDistrict', label: 'OFFICE TOWN/DISTRICT (FORM 94)', type: 'select', options: ['SELECT', 'MUMBAI', 'PUNE', 'NAGPUR', 'THANE', 'BANGALORE', 'KOLHAPUR'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'commPincode', label: 'OFFICE PINCODE (FORM 94)', type: 'text', placeholder: 'OFFICE PINCODE', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raTitle', label: 'REPRESENTATIVE ASSESSEE TITLE (FORM 94)', type: 'select', options: ['SHRI', 'SMT', 'KUMARI', 'M/S'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raFirstName', label: 'REPRESENTATIVE ASSESSEE FIRST NAME (FORM 94)', type: 'text', placeholder: 'RA FIRST NAME', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raMiddleName', label: 'REPRESENTATIVE ASSESSEE MIDDLE NAME (FORM 94)', type: 'text', placeholder: 'RA MIDDLE NAME', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raLastName', label: 'REPRESENTATIVE ASSESSEE LAST NAME (FORM 94)', type: 'text', placeholder: 'RA LAST NAME', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raPanNumber', label: 'REPRESENTATIVE ASSESSEE PAN (FORM 94)', type: 'text', placeholder: 'RA PAN NUMBER', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raAadhaarNumber', label: 'REPRESENTATIVE ASSESSEE AADHAAR NO (FORM 94)', type: 'text', placeholder: 'RA AADHAAR NO', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raMobileNumber', label: 'REPRESENTATIVE ASSESSEE MOBILE NO (FORM 94)', type: 'text', placeholder: 'RA MOBILE NO', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raEmail', label: 'REPRESENTATIVE ASSESSEE EMAIL ID (FORM 94)', type: 'email', placeholder: 'RA EMAIL ID', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raFlatNo', label: 'REPRESENTATIVE ASSESSEE FLAT NO (FORM 94)', type: 'text', placeholder: 'RA FLAT NO', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raRoadStreet', label: 'REPRESENTATIVE ASSESSEE ROAD/STREET (FORM 94)', type: 'text', placeholder: 'RA ROAD STREET', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raAreaTaluka', label: 'REPRESENTATIVE ASSESSEE AREA/TALUKA (FORM 94)', type: 'text', placeholder: 'RA AREA TALUKA', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raDistrict', label: 'REPRESENTATIVE ASSESSEE DISTRICT (FORM 94)', type: 'select', options: ['SELECT', 'MUMBAI', 'PUNE', 'NAGPUR', 'THANE', 'BANGALORE', 'KOLHAPUR'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raState', label: 'REPRESENTATIVE ASSESSEE STATE (FORM 94)', type: 'select', options: ['PLEASE SELECT', 'MAHARASHTRA', 'KARNATAKA', 'GUJARAT', 'DELHI', 'UTTAR PRADESH', 'MADHYA PRADESH', 'TAMIL NADU'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'raPincode', label: 'REPRESENTATIVE ASSESSEE PINCODE (FORM 94)', type: 'text', placeholder: 'RA PINCODE', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'verifierName', label: 'VERIFIER NAME (FORM 94)', type: 'text', placeholder: 'VERIFIER NAME', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'verifierCapacity', label: 'VERIFIER CAPACITY (FORM 94)', type: 'select', options: ['PARTNER', 'DIRECTOR', 'TRUSTEE', 'AUTHORISED SIGNATORY', 'PROPRIETOR', 'KARTA'], required: false, hidden: false, formType: 'Form 94' },
+      { name: 'verifierPlace', label: 'VERIFIER PLACE (FORM 94)', type: 'text', placeholder: 'VERIFIER PLACE', required: false, hidden: false, formType: 'Form 94' },
+      { name: 'verifierDate', label: 'VERIFIER DATE (FORM 94)', type: 'date', required: false, hidden: false, formType: 'Form 94' }
     ]
   },
   {
@@ -225,25 +256,33 @@ router.get('/correction-template', (req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'PAN CR individual.pdf'));
 });
 
-// PUT update dynamic PAN Card service sub-tabs & form fields configuration (Admin)
-router.put('/tabs', (req, res) => {
+// POST & PUT update dynamic PAN Card service sub-tabs & form fields configuration (Admin)
+const handleSaveTabs = (req, res) => {
   try {
-    if (Array.isArray(req.body)) {
-      panTabsConfig = req.body;
+    const listToSave = Array.isArray(req.body)
+      ? req.body
+      : (req.body && (req.body.tabs || req.body.panTabsConfigList)) || null;
+
+    if (Array.isArray(listToSave)) {
+      panTabsConfig = listToSave;
       try {
         fs.writeFileSync(panConfigFile, JSON.stringify(panTabsConfig, null, 2), 'utf8');
       } catch (err) {
         console.error('Error writing panTabsConfig.json:', err);
       }
-      return res.json({ message: 'PAN Forms configuration updated successfully!', tabs: panTabsConfig });
+      return res.json({ success: true, message: 'PAN Forms configuration updated successfully!', tabs: panTabsConfig });
     } else {
-      return res.status(400).json({ message: 'Invalid payload. Expected an array of tab configurations.' });
+      return res.status(400).json({ success: false, message: 'Invalid payload. Expected an array of tab configurations.' });
     }
   } catch (err) {
     console.error('Error updating PAN tabs config:', err);
-    res.status(500).json({ message: 'Failed to update PAN forms config' });
+    res.status(500).json({ success: false, message: 'Failed to update PAN forms config' });
   }
-});
+};
+
+router.post('/tabs', handleSaveTabs);
+router.put('/tabs', handleSaveTabs);
+
 
 // POST submit a new PAN card application
 router.post('/submit', async (req, res) => {
@@ -471,11 +510,11 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// PUT update status and remarks of a PAN application (Admin)
+// PUT update status, remarks and receipt of a PAN application (Admin)
 router.put('/status/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, adminRemarks, actorRole } = req.body;
+    const { status, adminRemarks, receiptUrl, actorRole } = req.body;
 
     const application = await PanCardApplication.findById(id);
     if (!application) {
@@ -484,6 +523,14 @@ router.put('/status/:id', async (req, res) => {
 
     if (status) application.status = status;
     if (adminRemarks !== undefined) application.adminRemarks = adminRemarks;
+
+    if (receiptUrl) {
+      let finalReceipt = receiptUrl;
+      if (receiptUrl.startsWith('data:')) {
+        finalReceipt = await uploadPanAsset(receiptUrl, 'mb_mitra/pan-receipts', `${application.ackNumber}_approved_receipt`);
+      }
+      application.receiptUrl = finalReceipt;
+    }
 
     await application.save();
 
@@ -498,8 +545,8 @@ router.put('/status/:id', async (req, res) => {
       emitNotificationSafely(notifyRetailer(req.app.get('io'), application.userId, {
         type: 'pan_application_status_updated',
         title: 'PAN application updated',
-        message: `Your PAN application ${application.ackNumber} is now ${application.status}.`,
-        data: { applicationId: application._id, status: application.status, adminRemarks: application.adminRemarks }
+        message: `Your PAN application ${application.ackNumber} status is '${application.status}'${application.receiptUrl ? ' and approved receipt is available.' : '.'}`,
+        data: { applicationId: application._id, status: application.status, adminRemarks: application.adminRemarks, receiptUrl: application.receiptUrl }
       }));
     }
 
@@ -510,6 +557,47 @@ router.put('/status/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating PAN application status:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// POST upload approved receipt PDF/Image for a PAN application (Admin)
+router.post('/upload-receipt/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { receiptUrl } = req.body;
+
+    if (!receiptUrl) {
+      return res.status(400).json({ success: false, message: 'Receipt data/URL is required.' });
+    }
+
+    const application = await PanCardApplication.findById(id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'PAN application not found.' });
+    }
+
+    let finalReceipt = receiptUrl;
+    if (receiptUrl.startsWith('data:')) {
+      finalReceipt = await uploadPanAsset(receiptUrl, 'mb_mitra/pan-receipts', `${application.ackNumber}_approved_receipt`);
+    }
+    application.receiptUrl = finalReceipt;
+    application.status = 'Approved';
+    await application.save();
+
+    emitNotificationSafely(notifyRetailer(req.app.get('io'), application.userId, {
+      type: 'pan_approved_receipt_uploaded',
+      title: '📄 Approved PAN Application Receipt Uploaded!',
+      message: `Admin uploaded approved receipt for PAN application ${application.ackNumber}.`,
+      data: { applicationId: application._id, ackNumber: application.ackNumber, receiptUrl: finalReceipt }
+    }));
+
+    res.json({
+      success: true,
+      message: 'Approved PAN Application Receipt uploaded and sent to retailer successfully!',
+      application
+    });
+  } catch (error) {
+    console.error('Error uploading approved PAN receipt:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

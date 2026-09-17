@@ -78,6 +78,20 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid User ID or Password' });
         }
 
+        // Check Approval Status (Admins are always approved)
+        if (user.role !== 'admin') {
+            if (user.status === 'Pending') {
+                return res.status(403).json({ 
+                    message: 'Your account is pending admin approval. You can login once approved by admin.' 
+                });
+            }
+            if (user.status === 'Rejected') {
+                return res.status(403).json({ 
+                    message: 'Your account registration has been rejected by the administrator.' 
+                });
+            }
+        }
+
         res.status(200).json({ message: 'Login successful', user });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -240,6 +254,110 @@ router.post('/activate', async (req, res) => {
         if (error.code === 11000 && error.keyPattern && error.keyPattern.userId) {
             return res.status(400).json({ message: 'This User ID is already taken. Please choose another one.' });
         }
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// POST request: Self-registration for new users (Pending Approval)
+router.post('/register', async (req, res) => {
+    const { userId, mobile, password, email } = req.body;
+
+    if (!userId || !userId.trim()) {
+        return res.status(400).json({ message: 'User ID is required.' });
+    }
+    if (!mobile || !mobile.trim()) {
+        return res.status(400).json({ message: 'Mobile number is required.' });
+    }
+    const cleanMobile = mobile.trim();
+    if (cleanMobile.length !== 10) {
+        return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number.' });
+    }
+    if (!password || password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    const cleanUserId = userId.trim();
+
+    try {
+        // Check if userId is already taken
+        const existingUser = await User.findOne({
+            userId: { $regex: new RegExp('^' + cleanUserId + '$', 'i') }
+        });
+        if (existingUser) {
+            return res.status(400).json({ message: 'This User ID is already taken. Please choose another.' });
+        }
+
+        // Check if mobile is already registered
+        const existingMobile = await User.findOne({ mobile: cleanMobile });
+        if (existingMobile) {
+            return res.status(400).json({ message: 'This Mobile Number is already registered. Please login or reset password.' });
+        }
+
+        // Generate Retailer ID (e.g. MBM123456)
+        const randomNum = Math.floor(100000 + Math.random() * 900000);
+        const generatedRetailerId = 'MBM' + randomNum;
+
+        const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : `${cleanUserId.toLowerCase()}@user.mbmitra.com`;
+
+        const newUser = new User({
+            userId: cleanUserId,
+            retailerId: generatedRetailerId,
+            mobile: cleanMobile,
+            email: cleanEmail,
+            password: password,
+            role: 'retailer',
+            status: 'Pending' // Explicitly set to Pending for admin approval
+        });
+
+        await newUser.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Registration request submitted successfully! Your account is pending admin approval.',
+            user: {
+                userId: newUser.userId,
+                mobile: newUser.mobile,
+                retailerId: newUser.retailerId,
+                status: newUser.status
+            }
+        });
+    } catch (error) {
+        console.error('Registration error:', error);
+        if (error.code === 11000) {
+            if (error.keyPattern && error.keyPattern.userId) {
+                return res.status(400).json({ message: 'This User ID is already taken. Please choose another.' });
+            }
+            if (error.keyPattern && error.keyPattern.mobile) {
+                return res.status(400).json({ message: 'This Mobile Number is already registered.' });
+            }
+        }
+        res.status(500).json({ message: error.message || 'Server error during registration' });
+    }
+});
+
+// PUT request: Update user status (Approve / Reject / Pending)
+router.put('/:id/status', async (req, res) => {
+    const { status } = req.body;
+    if (!['Approved', 'Rejected', 'Pending'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status. Must be Approved, Rejected, or Pending.' });
+    }
+
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        );
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `User account has been ${status.toLowerCase()} successfully.`,
+            user
+        });
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });

@@ -49,32 +49,76 @@ router.put('/:id', async (req, res) => {
         }
 
         const previousStatus = requisition.status;
-        const newStatus = req.body.status;
-        const approvedAmount = req.body.approvedAmount || 0;
+        const previousApprovedAmount = Number(requisition.approvedAmount) || 0;
+        let newStatus = req.body.status || requisition.status;
+        let approvedAmount = req.body.approvedAmount !== undefined 
+            ? Number(req.body.approvedAmount) 
+            : previousApprovedAmount;
+
+        // Validation: Approved amount cannot exceed requested amount
+        if (newStatus === 'Approved' || newStatus === 'Partially Approved') {
+            if (approvedAmount > requisition.amount) {
+                return res.status(400).json({ 
+                    message: `Approved amount (₹${approvedAmount}) cannot exceed requested amount (₹${requisition.amount}).` 
+                });
+            }
+            if (approvedAmount <= 0) {
+                return res.status(400).json({ 
+                    message: 'Approved amount must be greater than 0.' 
+                });
+            }
+            if (approvedAmount < requisition.amount) {
+                newStatus = 'Partially Approved';
+            } else {
+                newStatus = 'Approved';
+            }
+        } else if (newStatus === 'Rejected' || newStatus === 'Pending') {
+            approvedAmount = 0;
+        }
+
+        if (req.body.remarks !== undefined) {
+            requisition.remarks = req.body.remarks;
+        }
 
         requisition.status = newStatus;
         requisition.approvedAmount = approvedAmount;
         await requisition.save();
 
-        // If it was Pending and is now Approved/Partially Approved, update user's wallet
-        if (previousStatus === 'Pending' && (newStatus === 'Approved' || newStatus === 'Partially Approved')) {
-            const User = require('../models/User');
-            const WalletTransaction = require('../models/WalletTransaction');
-            
-            const user = await User.findOne({ userId: { $regex: new RegExp(`^${requisition.userId}$`, 'i') } });
-            if (user) {
+        // If requisition has an associated user, adjust wallet balance accordingly
+        const User = require('../models/User');
+        const WalletTransaction = require('../models/WalletTransaction');
+        
+        const user = await User.findOne({ userId: { $regex: new RegExp(`^${requisition.userId}$`, 'i') } });
+        if (user) {
+            let balanceDiff = 0;
+            const wasApproved = previousStatus === 'Approved' || previousStatus === 'Partially Approved';
+            const isApproved = newStatus === 'Approved' || newStatus === 'Partially Approved';
+
+            if (!wasApproved && isApproved) {
+                // Was Pending/Rejected, now Approved
+                balanceDiff = approvedAmount;
+            } else if (wasApproved && !isApproved) {
+                // Was Approved, now Rejected/Pending
+                balanceDiff = -previousApprovedAmount;
+            } else if (wasApproved && isApproved) {
+                // Was Approved, still Approved, but amount changed
+                balanceDiff = approvedAmount - previousApprovedAmount;
+            }
+
+            if (balanceDiff !== 0) {
                 const balanceBefore = user.walletBalance;
-                user.walletBalance += Number(approvedAmount);
+                user.walletBalance = Math.max(0, user.walletBalance + balanceDiff);
                 await user.save();
 
-                // Create WalletTransaction record
                 const newTx = new WalletTransaction({
                     userId: user.userId,
-                    transactionType: 'Credit',
-                    amount: Number(approvedAmount),
+                    transactionType: balanceDiff > 0 ? 'Credit' : 'Debit',
+                    amount: Math.abs(balanceDiff),
                     balanceBefore,
                     balanceAfter: user.walletBalance,
-                    description: requisition.remarks || (requisition.referenceNumber.startsWith('TXN') ? 'PaySprint Gateway - Auto Add' : 'Admin Requisition Approved'),
+                    description: balanceDiff > 0 && !wasApproved
+                        ? (requisition.remarks || 'Admin Requisition Approved')
+                        : `Admin Requisition Edit: ₹${previousApprovedAmount} -> ₹${approvedAmount}`,
                     referenceNumber: requisition.referenceNumber,
                     status: 'Success'
                 });

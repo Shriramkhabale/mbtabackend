@@ -21,7 +21,7 @@ const panCardApplicationSchema = new mongoose.Schema({
     ackNumber: { type: String, required: true },
     status: { type: String, default: 'Submitted' },
     remarks: { type: String, default: '' },
-    adminRemarks: { type: String, default: '' },
+    receiptUrl: { type: String, default: '' },
     additionalDocuments: [{
         name: { type: String, required: true },
         dataUrl: { type: String, required: true },

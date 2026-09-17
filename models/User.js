@@ -14,8 +14,8 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        required: false,
+        sparse: true
     },
     password: {
         type: String,
@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['admin', 'retailer', 'customer'],
         default: 'customer'
+    },
+    status: {
+        type: String,
+        enum: ['Pending', 'Approved', 'Rejected'],
+        default: 'Approved' // Existing accounts default to Approved
     },
     walletBalance: {
         type: Number,
