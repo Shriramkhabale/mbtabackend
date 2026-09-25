@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const WalletTransaction = require('../models/WalletTransaction');
 const User = require('../models/User');
+const { notifyRetailer } = require('../socket/notificationService');
 
 // GET all transactions
 router.get('/', async (req, res) => {
@@ -283,6 +285,103 @@ router.post('/credit', async (req, res) => {
         res.status(201).json({ message: 'Credit successful', transaction: newTx, walletBalance: user.walletBalance });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+});
+
+// POST Admin to Retailer Payment (Manual Credit / Debit Transfer)
+router.post('/admin-transfer', async (req, res) => {
+    const { targetUserId, transactionType, amount, description, referenceNumber } = req.body;
+
+    if (!targetUserId || !targetUserId.toString().trim()) {
+        return res.status(400).json({ message: 'Retailer ID / User ID / Mobile is required.' });
+    }
+
+    if (!transactionType || !['Credit', 'Debit'].includes(transactionType)) {
+        return res.status(400).json({ message: 'Transaction type must be Credit or Debit.' });
+    }
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({ message: 'Amount must be a positive number greater than 0.' });
+    }
+
+    try {
+        const queryTerm = targetUserId.toString().trim();
+        const searchConditions = [
+            { userId: { $regex: new RegExp(`^${queryTerm}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${queryTerm}$`, 'i') } },
+            { mobile: queryTerm },
+            { name: { $regex: new RegExp(`^${queryTerm}$`, 'i') } }
+        ];
+
+        if (mongoose.Types.ObjectId.isValid(queryTerm)) {
+            searchConditions.push({ _id: queryTerm });
+        }
+
+        const user = await User.findOne({ $or: searchConditions });
+
+        if (!user) {
+            return res.status(404).json({ message: `Retailer account not found for query "${queryTerm}".` });
+        }
+
+        const balanceBefore = Number(user.walletBalance || 0);
+        let balanceAfter = balanceBefore;
+
+        if (transactionType === 'Credit') {
+            balanceAfter = balanceBefore + numericAmount;
+        } else {
+            balanceAfter = balanceBefore - numericAmount;
+        }
+
+        // Save updated wallet balance for retailer
+        user.walletBalance = balanceAfter;
+        await user.save();
+
+        const refNo = (referenceNumber && referenceNumber.trim())
+            ? referenceNumber.trim()
+            : 'ADM' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 100);
+
+        const newTx = new WalletTransaction({
+            userId: user.userId,
+            transactionType,
+            amount: numericAmount,
+            balanceBefore,
+            balanceAfter,
+            description: description || `Admin Manual Payment (${transactionType})`,
+            referenceNumber: refNo,
+            status: 'Success'
+        });
+
+        await newTx.save();
+
+        // Emit real-time notification to retailer
+        try {
+            const io = req.app.get('io');
+            if (io && notifyRetailer) {
+                notifyRetailer(io, user.userId, {
+                    title: `Wallet ${transactionType}ed by Admin`,
+                    message: `Admin has ${transactionType === 'Credit' ? 'credited' : 'debited'} ₹${numericAmount.toFixed(2)} in your wallet. New Balance: ₹${balanceAfter.toFixed(2)}.`,
+                    type: 'WALLET_UPDATE'
+                });
+            }
+        } catch (e) {
+            console.error('Failed to send socket notification:', e.message);
+        }
+
+        res.status(201).json({
+            message: `Successfully ${transactionType === 'Credit' ? 'credited (+)' : 'debited (-)'} ₹${numericAmount.toFixed(2)} for retailer ${user.name || user.userId}.`,
+            transaction: newTx,
+            user: {
+                userId: user.userId,
+                retailerId: user.retailerId,
+                name: user.name,
+                mobile: user.mobile,
+                walletBalance: user.walletBalance
+            }
+        });
+    } catch (error) {
+        console.error('Error in admin-transfer:', error);
+        res.status(500).json({ message: error.message || 'Server error while processing wallet transfer' });
     }
 });
 

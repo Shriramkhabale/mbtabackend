@@ -177,7 +177,7 @@ const defaultPanTabsConfig = [
   },
   {
     id: 'epan_correction',
-    label: 'Already PAN / Correction',
+    label: 'PAN Correction',
     icon: '📝',
     fee: 107,
     badge: 'PAN Update Service',
@@ -545,10 +545,11 @@ router.get('/all', async (req, res) => {
 });
 
 // PUT update status, remarks and receipt of a PAN application (Admin)
+// PUT update status, remarks and receipt of a PAN application (Admin)
 router.put('/status/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, adminRemarks, receiptUrl, nsdlReceiptNumber, actorRole } = req.body;
+    const { status, adminRemarks, receiptUrl, nsdlReceiptNumber, actorRole, isRefundNeeded } = req.body;
 
     const application = await PanCardApplication.findById(id);
     if (!application) {
@@ -558,6 +559,34 @@ router.put('/status/:id', async (req, res) => {
     if (status) application.status = status;
     if (adminRemarks !== undefined) application.adminRemarks = adminRemarks;
     if (nsdlReceiptNumber !== undefined) application.nsdlReceiptNumber = nsdlReceiptNumber;
+
+    let refundMsg = '';
+    // Auto-refund fee to retailer wallet if status is set to Rejected and not previously refunded
+    if (status === 'Rejected' && !application.isRefunded && (isRefundNeeded !== false)) {
+      const user = await User.findOne({ userId: { $regex: new RegExp(`^${application.userId}$`, 'i') } });
+      if (user) {
+        const refundAmt = application.feeAmount || 107;
+        const balanceBefore = user.walletBalance;
+        user.walletBalance += refundAmt;
+        await user.save();
+
+        const refundTx = new WalletTransaction({
+          userId: user.userId,
+          transactionType: 'Credit',
+          amount: refundAmt,
+          balanceBefore,
+          balanceAfter: user.walletBalance,
+          description: `Refund for Rejected PAN Application (${application.ackNumber})`,
+          referenceNumber: `REF-${application.ackNumber}`,
+          status: 'Success'
+        });
+        await refundTx.save();
+
+        application.isRefunded = true;
+        application.refundAmount = refundAmt;
+        refundMsg = ` Fee ₹${refundAmt} refunded to retailer wallet (${user.userId}).`;
+      }
+    }
 
     if (receiptUrl) {
       let finalReceipt = receiptUrl;
@@ -580,18 +609,79 @@ router.put('/status/:id', async (req, res) => {
       emitNotificationSafely(notifyRetailer(req.app.get('io'), application.userId, {
         type: 'pan_application_status_updated',
         title: 'PAN application updated',
-        message: `Your PAN application ${application.ackNumber} status is '${application.status}'${application.receiptUrl ? ' and approved receipt is available.' : '.'}`,
-        data: { applicationId: application._id, status: application.status, adminRemarks: application.adminRemarks, receiptUrl: application.receiptUrl, nsdlReceiptNumber: application.nsdlReceiptNumber }
+        message: `Your PAN application ${application.ackNumber} status is '${application.status}'${application.isRefunded ? ' (Fee Refunded to Wallet)' : ''}${application.receiptUrl ? ' and approved receipt is available.' : '.'}`,
+        data: { applicationId: application._id, status: application.status, adminRemarks: application.adminRemarks, receiptUrl: application.receiptUrl, nsdlReceiptNumber: application.nsdlReceiptNumber, isRefunded: application.isRefunded }
       }));
     }
 
     res.json({
       success: true,
-      message: `PAN Application status updated to '${application.status}' successfully!`,
+      message: `PAN Application status updated to '${application.status}' successfully!${refundMsg}`,
       application
     });
   } catch (error) {
     console.error('Error updating PAN application status:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE a PAN application (Retailer / Admin)
+// Once Approved/Completed by Admin, Retailer cannot delete or remove!
+router.delete('/application/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const role = (req.query.role || req.body.role || '').toLowerCase();
+    const userId = req.query.userId || req.body.userId || '';
+
+    const application = await PanCardApplication.findById(id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'PAN application not found.' });
+    }
+
+    const currentStatus = (application.status || 'Submitted').toLowerCase();
+    const isApprovedOrCompleted = currentStatus === 'approved' || currentStatus === 'completed';
+
+    // Retailer CANNOT delete if approved/completed by admin!
+    if (role !== 'admin' && isApprovedOrCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: 'This PAN application has already been approved by Admin and cannot be deleted or removed.'
+      });
+    }
+
+    let refundNotice = '';
+    // Refund fee to retailer if retailer deletes their pending/unapproved submission
+    if (role !== 'admin' && !application.isRefunded && !isApprovedOrCompleted) {
+      const user = await User.findOne({ userId: { $regex: new RegExp(`^${application.userId || userId}$`, 'i') } });
+      if (user) {
+        const refundAmt = application.feeAmount || 107;
+        const balanceBefore = user.walletBalance;
+        user.walletBalance += refundAmt;
+        await user.save();
+
+        const refundTx = new WalletTransaction({
+          userId: user.userId,
+          transactionType: 'Credit',
+          amount: refundAmt,
+          balanceBefore,
+          balanceAfter: user.walletBalance,
+          description: `Refund for Cancelled PAN Application (${application.ackNumber})`,
+          referenceNumber: `CAN-${application.ackNumber}`,
+          status: 'Success'
+        });
+        await refundTx.save();
+        refundNotice = ` Fee of ₹${refundAmt} refunded to your wallet balance.`;
+      }
+    }
+
+    await PanCardApplication.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: `PAN Application deleted successfully.${refundNotice}`
+    });
+  } catch (error) {
+    console.error('Error deleting PAN application:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

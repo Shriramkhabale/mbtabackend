@@ -12,6 +12,18 @@ const userSchema = new mongoose.Schema({
         unique: true,
         sparse: true // allows it to be unique but optional for older docs
     },
+    name: {
+        type: String,
+        required: false
+    },
+    shopName: {
+        type: String,
+        required: false
+    },
+    businessAddress: {
+        type: String,
+        required: false
+    },
     email: {
         type: String,
         required: false,

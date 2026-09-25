@@ -27,6 +27,7 @@ const directPaymentRoutes = require('./routes/directPaymentRoutes');
 const panCardRoutes = require('./routes/panCardRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const staffRoutes = require('./routes/staffRoutes');
+const siteSettingsRoutes = require('./routes/siteSettingsRoutes');
 
 const path = require('path');
 
@@ -52,6 +53,7 @@ app.use('/api/direct-payment', directPaymentRoutes);
 app.use('/api/pancard', panCardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/site-settings', siteSettingsRoutes);
 
 // Callback forwarder for PaySprint's configured URL
 app.post('/UpiCollectionCallback.aspx', (req, res) => {
@@ -66,6 +68,14 @@ app.get('/', (req, res) => {
 app.use((err, req, res, next) => {
     console.error('GLOBAL ERROR:', err);
     res.status(500).json({ error: err.message, stack: err.stack });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception thrown:', err);
 });
 
 const PORT = process.env.PORT || 5000;

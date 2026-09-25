@@ -260,23 +260,27 @@ router.post('/activate', async (req, res) => {
 
 // POST request: Self-registration for new users (Pending Approval)
 router.post('/register', async (req, res) => {
-    const { userId, mobile, password, email } = req.body;
+    const { userId, fullName, name, mobile, password, email, shopName, businessAddress } = req.body;
 
-    if (!userId || !userId.trim()) {
-        return res.status(400).json({ message: 'User ID is required.' });
-    }
-    if (!mobile || !mobile.trim()) {
-        return res.status(400).json({ message: 'Mobile number is required.' });
-    }
-    const cleanMobile = mobile.trim();
-    if (cleanMobile.length !== 10) {
+    const personName = (fullName || name || '').trim();
+    const cleanMobile = (mobile || '').trim();
+
+    if (!cleanMobile || cleanMobile.length !== 10) {
         return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number.' });
     }
     if (!password || password.length < 6) {
         return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
-    const cleanUserId = userId.trim();
+    // Auto-generate User ID if not explicitly provided
+    let cleanUserId = (userId || '').trim();
+    if (!cleanUserId) {
+        if (personName) {
+            cleanUserId = personName.toLowerCase().replace(/[^a-z0-9]/g, '') + cleanMobile.slice(-4);
+        } else {
+            cleanUserId = 'user_' + cleanMobile;
+        }
+    }
 
     try {
         // Check if userId is already taken
@@ -284,7 +288,8 @@ router.post('/register', async (req, res) => {
             userId: { $regex: new RegExp('^' + cleanUserId + '$', 'i') }
         });
         if (existingUser) {
-            return res.status(400).json({ message: 'This User ID is already taken. Please choose another.' });
+            // Append random digits if generated ID already exists
+            cleanUserId = cleanUserId + Math.floor(100 + Math.random() * 900);
         }
 
         // Check if mobile is already registered
@@ -302,6 +307,9 @@ router.post('/register', async (req, res) => {
         const newUser = new User({
             userId: cleanUserId,
             retailerId: generatedRetailerId,
+            name: personName,
+            shopName: shopName ? shopName.trim() : '',
+            businessAddress: businessAddress ? businessAddress.trim() : '',
             mobile: cleanMobile,
             email: cleanEmail,
             password: password,
@@ -316,6 +324,7 @@ router.post('/register', async (req, res) => {
             message: 'Registration request submitted successfully! Your account is pending admin approval.',
             user: {
                 userId: newUser.userId,
+                name: newUser.name,
                 mobile: newUser.mobile,
                 retailerId: newUser.retailerId,
                 status: newUser.status

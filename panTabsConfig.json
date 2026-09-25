@@ -29,15 +29,6 @@
         "hidden": false
       },
       {
-        "name": "motherLastName",
-        "label": "MOTHER'S LAST NAME",
-        "type": "text",
-        "placeholder": "MOTHER LAST NAME",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
         "name": "firstName",
         "label": "FIRST NAME",
         "type": "text",
@@ -166,6 +157,15 @@
         "type": "text",
         "placeholder": "NAME AS PER AADHAAR",
         "required": true,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "motherLastName",
+        "label": "MOTHER'S LAST NAME",
+        "type": "text",
+        "placeholder": "MOTHER LAST NAME",
+        "required": false,
         "formType": "Form 93",
         "hidden": false
       },
@@ -1083,6 +1083,24 @@
         "hidden": false
       },
       {
+        "name": "sourceofincome",
+        "label": "Source of Income ",
+        "type": "select",
+        "placeholder": "",
+        "icon": "📝",
+        "required": true,
+        "hidden": false,
+        "formType": "Form 93",
+        "options": [
+          "Salary",
+          "Income from Business/Profession",
+          "Income from House Property",
+          "Capital Gains",
+          "Income from Other Sources",
+          "No Income"
+        ]
+      },
+      {
         "name": "proofOfAddress",
         "label": "PROOF OF ADDRESS",
         "type": "select",
@@ -1110,16 +1128,6 @@
         "required": false,
         "formType": "Form 93",
         "hidden": false
-      },
-      {
-        "name": "abcd",
-        "label": "abcd",
-        "type": "text",
-        "placeholder": "xyz",
-        "icon": "📝",
-        "required": true,
-        "hidden": false,
-        "formType": "Form 94"
       },
       {
         "name": "dateOfIncorporation",
@@ -3087,7 +3095,7 @@
   },
   {
     "id": "epan_correction",
-    "label": "Already PAN / Correction",
+    "label": "PAN Correction",
     "icon": "📝",
     "fee": 107,
     "badge": "PAN Update Service",

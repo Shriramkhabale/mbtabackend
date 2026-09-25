@@ -24,6 +24,8 @@ const panCardApplicationSchema = new mongoose.Schema({
     adminRemarks: { type: String, default: '' },
     nsdlReceiptNumber: { type: String, default: '' },
     receiptUrl: { type: String, default: '' },
+    isRefunded: { type: Boolean, default: false },
+    refundAmount: { type: Number, default: 0 },
     additionalDocuments: [{
         name: { type: String, required: true },
         dataUrl: { type: String, required: true },
