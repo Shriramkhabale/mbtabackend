@@ -3,54 +3,104 @@ const router = express.Router();
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 const UPIConfig = require('../models/UPIConfig');
-const crypto = require('crypto');
+const {
+    getPartnerId,
+    getBaseUrl,
+    getHeaders,
+    decryptPayload,
+    encryptPayload
+} = require('../utils/paysprint');
 
-// Generate JWT token for PaySprint API
-const generatePaySprintToken = (jwtKey) => {
-    const base64url = (str) => {
-        return str.toString('base64')
-            .replace(/=/g, '')
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_');
-    };
-
-    let partnerId = 'PS00121758';
-    try {
-        const decoded = Buffer.from(jwtKey, 'base64').toString('utf8');
-        if (decoded && decoded.startsWith('PS')) {
-            const match = decoded.match(/^(PS\d+)/);
-            if (match) {
-                partnerId = match[1];
-            }
-        }
-    } catch (e) {
-        console.error("Error decoding JWT_KEY for partnerId:", e);
+// In-memory ring buffer for recent callback logs (for live status inspection)
+const recentCallbackLogs = [];
+const recordCallbackLog = (logEntry) => {
+    recentCallbackLogs.unshift({
+        timestamp: new Date().toISOString(),
+        ...logEntry
+    });
+    if (recentCallbackLogs.length > 100) {
+        recentCallbackLogs.pop();
     }
-
-    const header = { typ: 'JWT', alg: 'HS256' };
-    const payload = {
-        iss: 'PAYSPRINT',
-        timestamp: Math.floor(Date.now() / 1000),
-        partnerId: partnerId,
-        product: 'WALLET',
-        reqid: String(Math.floor(100000 + Math.random() * 900000))
-    };
-
-    const headerB64 = base64url(Buffer.from(JSON.stringify(header)));
-    const payloadB64 = base64url(Buffer.from(JSON.stringify(payload)));
-    const signatureInput = `${headerB64}.${payloadB64}`;
-    
-    const signature = crypto.createHmac('sha256', jwtKey)
-        .update(signatureInput)
-        .digest();
-    const signatureB64 = base64url(signature);
-    return `${signatureInput}.${signatureB64}`;
 };
 
-// POST /api/direct-payment/initiate
-// Called when retailer submits checkout, creates a pending transaction and initiates PG or UPI QR
+/**
+ * Query status from PaySprint Live / Sandbox API
+ */
+const queryPaySprintStatus = async (txnId) => {
+    try {
+        const partnerId = getPartnerId();
+        const baseUrl = getBaseUrl();
+        const headers = getHeaders('WALLET');
+
+        const endpoints = [
+            {
+                url: `${baseUrl}/api/v1/service/upi/cashout/txn_status`,
+                body: { merchant_code: partnerId, refid: txnId }
+            },
+            {
+                url: `${baseUrl}/api/v1/service/upi/status`,
+                body: { txnid: txnId, referenceid: txnId }
+            },
+            {
+                url: `${baseUrl}/service-api/api/v1/service/upi/upiqr/status`,
+                body: { txnid: txnId, referenceid: txnId }
+            }
+        ];
+
+        for (const ep of endpoints) {
+            try {
+                const paysprintRes = await fetch(ep.url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(ep.body)
+                });
+
+                if (paysprintRes.ok) {
+                    const data = await paysprintRes.json();
+                    console.log(`[PaySprint Status Query ${ep.url}] Response:`, data);
+                    
+                    const isSuccess = data && (
+                        data.status === true || 
+                        data.response_code === 1 || 
+                        (data.txn_status && (String(data.txn_status).toUpperCase() === 'SUCCESS' || data.txn_status === 1 || data.txn_status === '1')) ||
+                        (data.data && (
+                            data.data.status === 'success' || 
+                            data.data.status === 'SUCCESS' || 
+                            data.data.response_code === 1 ||
+                            data.data.txn_status === '1' ||
+                            data.data.txn_status === 1
+                        ))
+                    );
+
+                    if (isSuccess) {
+                        return {
+                            isVerified: true,
+                            data: data,
+                            message: data.message || 'Transaction confirmed by PaySprint'
+                        };
+                    }
+                }
+            } catch (innerErr) {
+                // Try next endpoint
+            }
+        }
+
+        return {
+            isVerified: false,
+            message: 'Payment awaiting confirmation. Please complete payment in your UPI app.'
+        };
+    } catch (err) {
+        console.error('[PaySprint Status Query] Exception:', err);
+        return { isVerified: false, message: 'Payment verification pending' };
+    }
+};
+
+/**
+ * POST /api/direct-payment/initiate
+ * Called when user requests top-up. Generates PaySprint Dynamic QR Code.
+ */
 router.post('/initiate', async (req, res) => {
-    const { userId, amount, paymentMethod } = req.body;
+    const { userId, amount, paymentMethod } = req.body || {};
 
     if (!userId || amount === undefined || amount === null || isNaN(Number(amount)) || Number(amount) <= 0) {
         return res.status(400).json({ success: false, message: 'Invalid payment parameters' });
@@ -59,11 +109,11 @@ router.post('/initiate', async (req, res) => {
     try {
         const user = await User.findOne({ userId: { $regex: new RegExp(`^${userId}$`, 'i') } });
         if (!user) {
-            return res.status(404).json({ success: false, message: `User '${userId}' not found. Please check your account.` });
+            return res.status(404).json({ success: false, message: `User '${userId}' not found.` });
         }
 
-        // Generate a unique transaction ID
-        const txnId = 'PG' + Date.now() + Math.floor(Math.random() * 10000);
+        // Generate a unique PaySprint transaction reference ID
+        const txnId = 'PS' + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
         // Save a pending wallet transaction record
         const pendingTx = new WalletTransaction({
@@ -72,68 +122,94 @@ router.post('/initiate', async (req, res) => {
             amount: Number(amount),
             balanceBefore: user.walletBalance,
             balanceAfter: user.walletBalance,
-            description: `Wallet Top-Up via ${paymentMethod || 'Payment Gateway'} (Pending)`,
+            description: `Wallet Top-Up via PaySprint Live UPI QR (Ref: ${txnId})`,
             referenceNumber: txnId,
             status: 'Pending'
         });
         await pendingTx.save();
 
-        // Check if PaySprint credentials are set up for live/sandbox UPI Collection API
-        const jwtKey = process.env.JWT_KEY;
-        const authorisedKey = process.env.AUTHORISED_KEY;
-
         let qrData = null;
         let upiLink = '';
+        let checkoutUrl = '';
 
-        if (paymentMethod === 'UPI' && jwtKey && authorisedKey) {
-            try {
-                const token = generatePaySprintToken(jwtKey);
-                const environment = process.env.ENVIRONMENT || 'UAT';
-                const url = environment === 'UAT'
-                    ? 'https://uat.paysprint.in/service-api/api/v1/service/upi/upiqr/generate'
-                    : 'https://api.paysprint.in/service-api/api/v1/service/upi/upiqr/generate';
+        const partnerId = getPartnerId();
+        const baseUrl = getBaseUrl();
+        const headers = getHeaders('WALLET');
 
-                const bodyData = {
-                    amount: String(amount),
-                    txnid: txnId,
-                    mobile: user.mobile || '8766020070',
-                    email: user.email || 'customer@gmail.com',
-                    name: user.name || 'Retailer',
-                    remarks: 'Wallet TopUp'
-                };
+        // 1. Try PaySprint UPI Cashout / Dynamic QR Token
+        try {
+            const tokenRes = await fetch(`${baseUrl}/api/v1/service/upi/cashout/get_token`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    merchant_code: partnerId,
+                    redirect_url: `https://b2b.mbmitra.com/api/direct-payment/callback?txnid=${txnId}`
+                })
+            });
 
-                const paysprintRes = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorisedkey': authorisedKey,
-                        'Token': token,
-                        'accept': 'application/json',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify(bodyData)
-                });
-
-                if (paysprintRes.ok) {
-                    const data = await paysprintRes.json();
-                    if (data && (data.status === true || data.response_code === 1)) {
-                        qrData = data.qr_url || data.qrCode || data.qr_code;
-                        upiLink = data.upi_link || data.upiLink || '';
-                    }
+            if (tokenRes.ok) {
+                const tokenData = await tokenRes.json();
+                console.log('[PaySprint Cashout Token] Response:', tokenData);
+                if (tokenData && (tokenData.status === true || tokenData.response_code === 1) && tokenData.url) {
+                    checkoutUrl = tokenData.url;
                 }
-            } catch (err) {
-                console.error("PaySprint UPI QR generation failed, falling back to merchant direct QR:", err.message);
             }
+        } catch (e) {
+            console.warn('[PaySprint Cashout Token Exception]:', e.message);
         }
 
-        // If PaySprint PG failed or wasn't used, construct a direct merchant UPI QR code
-        if (!qrData) {
+        // 2. Try PaySprint UPI QR Generation
+        try {
+            const qrEndpoints = [
+                `${baseUrl}/api/v1/service/upi/upiqr/generate`,
+                `${baseUrl}/service-api/api/v1/service/upi/upiqr/generate`,
+                `${baseUrl}/api/v1/service/upi/dynamicqr`
+            ];
+
+            const qrBody = {
+                amount: String(Number(amount).toFixed(2)),
+                txnid: txnId,
+                mobile: user.mobile || '8766020070',
+                email: user.email || 'customer@mbmitra.com',
+                name: user.name || 'Retailer',
+                remarks: 'Wallet TopUp'
+            };
+
+            for (const url of qrEndpoints) {
+                try {
+                    const psRes = await fetch(url, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(qrBody)
+                    });
+
+                    if (psRes.ok) {
+                        const data = await psRes.json();
+                        console.log(`[PaySprint QR Gen ${url}] Response:`, data);
+                        if (data && (data.status === true || data.response_code === 1 || data.qr_url || data.qrCode || data.qr_code)) {
+                            qrData = data.qr_url || data.qrCode || data.qr_code || (data.data && (data.data.qr_url || data.data.qrCode));
+                            upiLink = data.upi_link || data.upiLink || (data.data && (data.data.upi_link || data.data.upiLink)) || '';
+                            if (qrData || upiLink) break;
+                        }
+                    }
+                } catch (innerErr) {
+                    // Try next endpoint
+                }
+            }
+        } catch (err) {
+            console.error('[PaySprint QR Generation Exception]:', err.message);
+        }
+
+        // 3. Fallback to Dynamic UPI String encoded with Transaction ID & Merchant VPA
+        if (!qrData && !upiLink) {
             const upiConfig = await UPIConfig.findOne();
-            const merchantUpiId = upiConfig && upiConfig.upiId ? upiConfig.upiId : 'paysprint@ybl';
-            upiLink = `upi://pay?pa=${merchantUpiId}&pn=MB%20MITRA&am=${amount}&tr=${txnId}&tn=Wallet%20TopUp&cu=INR`;
-            qrData = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
+            const merchantUpiId = upiConfig && upiConfig.upiId ? upiConfig.upiId : 'MBTA@ICICI';
+            upiLink = `upi://pay?pa=${merchantUpiId}&pn=MB%20MITRA%20PAYSPRINT&am=${Number(amount).toFixed(2)}&tr=${txnId}&tn=PaySprint%20Wallet%20TopUp&cu=INR`;
+            qrData = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiLink)}`;
+        } else if (upiLink && !qrData) {
+            qrData = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiLink)}`;
         }
 
-        // Return the order metadata and generated QR details for frontend checkout display
         res.json({
             success: true,
             txnId,
@@ -142,197 +218,180 @@ router.post('/initiate', async (req, res) => {
             paymentMethod: paymentMethod || 'UPI',
             qrCodeUrl: qrData,
             upiLink: upiLink,
-            message: 'Payment initiated. Proceed to checkout.'
+            checkoutUrl: checkoutUrl,
+            gateway: 'PaySprint Live PG',
+            message: 'PaySprint Payment QR generated. Scan with any UPI app to complete top-up.'
         });
     } catch (error) {
+        console.error('[Direct Payment Initiate] Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// POST /api/direct-payment/confirm
-// Called after client-side successful payment – verifies and credits wallet
-router.post('/confirm', async (req, res) => {
-    const { userId, amount, txnId, paymentMethod } = req.body;
+/**
+ * Handle Status Check (Polling & Manual Button)
+ */
+const handleStatusCheck = async (req, res) => {
+    const txnId = req.params?.txnId || req.body?.txnId || req.query?.txnId;
 
-    if (!userId || !txnId || amount === undefined || amount === null || isNaN(Number(amount)) || Number(amount) <= 0) {
-        return res.status(400).json({ success: false, message: 'Missing or invalid required fields' });
+    if (!txnId) {
+        return res.status(400).json({ success: false, message: 'Missing transaction ID' });
     }
 
     try {
-        const user = await User.findOne({ userId: { $regex: new RegExp(`^${userId}$`, 'i') } });
-        if (!user) {
-            return res.status(404).json({ success: false, message: `User '${userId}' not found` });
-        }
-
-        // Find the transaction record in our database
         let tx = await WalletTransaction.findOne({ referenceNumber: txnId });
-        
-        // If already success, just return success
-        if (tx && tx.status === 'Success') {
-            return res.json({
-                success: true,
-                message: 'Payment already confirmed.',
-                walletBalance: user.walletBalance,
-                transaction: tx
-            });
-        }
-
-        const jwtKey = process.env.JWT_KEY;
-        const authorisedKey = process.env.AUTHORISED_KEY;
-        let isVerified = false;
-        let gatewayResponseMsg = '';
-
-        // If credentials exist and it is a UPI gateway transaction, perform API verification
-        if (paymentMethod === 'UPI' && jwtKey && authorisedKey) {
-            try {
-                const token = generatePaySprintToken(jwtKey);
-                const environment = process.env.ENVIRONMENT || 'UAT';
-                const url = environment === 'UAT'
-                    ? 'https://uat.paysprint.in/service-api/api/v1/service/upi/upiqr/status'
-                    : 'https://api.paysprint.in/service-api/api/v1/service/upi/upiqr/status';
-
-                console.log(`[Confirm Verification] Querying status for txnId: ${txnId} from PaySprint UAT...`);
-                const paysprintRes = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorisedkey': authorisedKey,
-                        'Token': token,
-                        'accept': 'application/json',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({ txnid: txnId })
-                });
-
-                if (paysprintRes.ok) {
-                    const data = await paysprintRes.json();
-                    console.log('[Confirm Verification] PaySprint response:', data);
-                    
-                    // If PaySprint confirms it is a successful transaction
-                    const isSuccess = data && (
-                        data.status === true || 
-                        data.response_code === 1 || 
-                        (data.txn_status && String(data.txn_status).toLowerCase() === 'success') ||
-                        (data.data && data.data.status === 'success')
-                    );
-                    
-                    if (isSuccess) {
-                        isVerified = true;
-                        gatewayResponseMsg = data.message || 'Verified successfully';
-                    } else {
-                        gatewayResponseMsg = data.message || 'Payment pending or not found on PaySprint';
-                    }
-                } else {
-                    gatewayResponseMsg = `HTTP Error ${paysprintRes.status}`;
-                }
-            } catch (err) {
-                console.error("[Confirm Verification] PaySprint API status check error:", err);
-                gatewayResponseMsg = `Status API unreachable: ${err.message}`;
-            }
-        } else {
-            // For fallback mode (no credentials) or cards/netbanking (simulated processing in demo)
-            console.log(`[Confirm Verification] Bypass validation: No PaySprint credentials or non-UPI method. Auto-verifying transaction ${txnId}.`);
-            isVerified = true;
-            gatewayResponseMsg = 'Simulated Verification Success';
-        }
-
-        if (!isVerified) {
-            return res.status(400).json({
-                success: false,
-                message: `Payment verification failed: ${gatewayResponseMsg}. Wallet not credited.`
-            });
-        }
-
-        // Credit the wallet
-        const creditAmount = Number(amount);
-        const balanceBefore = user.walletBalance;
-        user.walletBalance = parseFloat((user.walletBalance + creditAmount).toFixed(2));
-        await user.save();
-
-        if (tx) {
-            tx.status = 'Success';
-            tx.balanceBefore = balanceBefore;
-            tx.balanceAfter = user.walletBalance;
-            tx.description = `Wallet Top-Up via ${paymentMethod || 'Payment Gateway'}`;
-            await tx.save();
-        } else {
-            // Create a new success record if it didn't exist
-            tx = new WalletTransaction({
-                userId: user.userId,
-                transactionType: 'Credit',
-                amount: creditAmount,
-                balanceBefore,
-                balanceAfter: user.walletBalance,
-                description: `Wallet Top-Up via ${paymentMethod || 'Payment Gateway'}`,
-                referenceNumber: txnId,
-                status: 'Success'
-            });
-            await tx.save();
-        }
-
-        res.json({
-            success: true,
-            message: 'Payment verified and confirmed. Wallet credited.',
-            walletBalance: user.walletBalance,
-            transaction: tx
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// POST /api/direct-payment/callback
-// Handles webhook callback from PaySprint to dynamically credit wallet
-router.post('/callback', async (req, res) => {
-    console.log('[PG Webhook Callback] Received payload:', req.body);
-    
-    // IP Security check
-    let clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    if (clientIp && clientIp.includes(',')) {
-        clientIp = clientIp.split(',')[0].trim();
-    }
-    if (clientIp && clientIp.startsWith('::ffff:')) {
-        clientIp = clientIp.substring(7);
-    }
-
-    const allowedIpsStr = process.env.ALLOWED_IP || '';
-    const allowedIps = allowedIpsStr.split(',').map(ip => ip.trim()).filter(Boolean);
-    const isLocalhost = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === 'localhost';
-    const isUAT = process.env.ENVIRONMENT === 'UAT';
-
-    if (allowedIps.length > 0 && !allowedIps.includes(clientIp)) {
-        if (isUAT && isLocalhost) {
-            console.log(`[PG Webhook Callback] Bypassing IP check for localhost in UAT mode (Client IP: ${clientIp})`);
-        } else {
-            console.warn(`[PG Webhook Callback] Forbidden access attempt from IP: ${clientIp}`);
-            return res.status(403).json({ status: 'failed', message: 'Forbidden: Unauthorized IP' });
-        }
-    }
-
-    const { status, txnid, amount, refno } = req.body;
-
-    const isSuccess = status === 1 || status === '1' || status === 'success' || status === 'Success' || status === true;
-    if (!isSuccess) {
-        return res.json({ status: 'ignored', message: 'Transaction status is not success' });
-    }
-
-    try {
-        const targetTxnId = txnid || refno;
-        const tx = await WalletTransaction.findOne({ referenceNumber: targetTxnId, status: 'Pending' });
         if (!tx) {
-            return res.status(404).json({ status: 'failed', message: 'Pending transaction not found' });
+            return res.status(404).json({ success: false, message: 'Transaction not found' });
         }
 
         const user = await User.findOne({ userId: tx.userId });
         if (!user) {
-            return res.status(404).json({ status: 'failed', message: 'User not found' });
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        // Verify if payment amount matches
-        if (amount && Number(amount) !== tx.amount) {
-            console.warn(`[PG Webhook Callback] Amount mismatch: expected ₹${tx.amount}, got ₹${amount}. Crediting the requested amount ₹${tx.amount}.`);
+        // If already marked success, return immediately
+        if (tx.status === 'Success') {
+            return res.json({
+                success: true,
+                status: 'Success',
+                message: 'Payment verified and credited to wallet.',
+                walletBalance: user.walletBalance,
+                amount: tx.amount,
+                transaction: tx
+            });
         }
 
-        const creditAmount = tx.amount;
+        // Query status from PaySprint Live API
+        const statusResult = await queryPaySprintStatus(txnId);
+
+        if (statusResult.isVerified) {
+            const creditAmount = Number(tx.amount);
+            const balanceBefore = user.walletBalance;
+            user.walletBalance = parseFloat((user.walletBalance + creditAmount).toFixed(2));
+            await user.save();
+
+            tx.status = 'Success';
+            tx.balanceBefore = balanceBefore;
+            tx.balanceAfter = user.walletBalance;
+            tx.description = `Wallet Top-Up via PaySprint Live UPI`;
+            if (statusResult.data) {
+                tx.paysprintResponse = statusResult.data;
+            }
+            await tx.save();
+
+            // Emit socket update
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('wallet_balance_updated', {
+                    userId: user.userId,
+                    walletBalance: user.walletBalance,
+                    amount: creditAmount,
+                    type: 'Credit',
+                    txnId: txnId
+                });
+                io.emit('payment_success', {
+                    userId: user.userId,
+                    walletBalance: user.walletBalance,
+                    amount: creditAmount,
+                    txnId: txnId
+                });
+            }
+
+            return res.json({
+                success: true,
+                status: 'Success',
+                message: `Payment verified! ₹${creditAmount.toFixed(2)} credited to your wallet.`,
+                walletBalance: user.walletBalance,
+                amount: creditAmount,
+                transaction: tx
+            });
+        } else {
+            return res.json({
+                success: false,
+                status: 'Pending',
+                message: statusResult.message || 'Payment is awaiting completion.',
+                walletBalance: user.walletBalance
+            });
+        }
+    } catch (error) {
+        console.error('[Direct Payment Status Check] Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+router.get('/check-status/:txnId', handleStatusCheck);
+router.post('/check-status', handleStatusCheck);
+router.post('/check-status/:txnId', handleStatusCheck);
+router.post('/confirm', handleStatusCheck);
+
+/**
+ * Real-time PaySprint Callback Webhook Handler
+ */
+const handlePaySprintCallback = async (req, res) => {
+    const rawBody = req.body || {};
+    const rawQuery = req.query || {};
+    console.log('[PaySprint PG Callback] Received payload:', JSON.stringify(rawBody), 'Query:', JSON.stringify(rawQuery));
+
+    let payload = { ...rawQuery, ...rawBody };
+
+    // Decrypt if AES encrypted
+    if (payload.data || payload.encdata || payload.response) {
+        const encryptedStr = payload.data || payload.encdata || payload.response;
+        const decrypted = decryptPayload(encryptedStr);
+        if (decrypted) {
+            console.log('[PaySprint PG Callback] Decrypted payload:', decrypted);
+            payload = { ...payload, ...decrypted };
+        }
+    }
+
+    // Resolve transaction ID across PaySprint field variants
+    const targetTxnId = payload.txnid || payload.refno || payload.referenceid || payload.merchant_txn_id || payload.client_txn_id || payload.order_id || payload.txnId || payload.prn || payload.refid;
+
+    // Resolve payment status
+    const statusVal = payload.status !== undefined ? payload.status : payload.txn_status !== undefined ? payload.txn_status : payload.response_code;
+    const isSuccess = statusVal === 1 || statusVal === '1' || statusVal === true || statusVal === 'true' ||
+        String(statusVal).toUpperCase() === 'SUCCESS' || String(statusVal).toUpperCase() === 'TXN_SUCCESS';
+
+    const utr = payload.bank_ref_num || payload.rrn || payload.utr || payload.bank_txn_id || payload.ackno || '';
+    const payerVpa = payload.payer_vpa || payload.vpa || payload.payerVpa || '';
+
+    recordCallbackLog({
+        targetTxnId,
+        statusVal,
+        isSuccess,
+        utr,
+        payerVpa,
+        payload
+    });
+
+    if (!targetTxnId) {
+        console.warn('[PaySprint PG Callback] Missing transaction ID in callback payload');
+        return res.status(400).json({ status: 'failed', message: 'Missing transaction reference in callback' });
+    }
+
+    if (!isSuccess) {
+        console.log(`[PaySprint PG Callback] Transaction ${targetTxnId} status is not success (${statusVal})`);
+        return res.json({ status: 'ignored', message: 'Transaction status is not success' });
+    }
+
+    try {
+        let tx = await WalletTransaction.findOne({ referenceNumber: targetTxnId });
+        if (!tx) {
+            console.warn(`[PaySprint PG Callback] Transaction not found for Ref: ${targetTxnId}`);
+            return res.status(404).json({ status: 'failed', message: `Transaction '${targetTxnId}' not found` });
+        }
+
+        const user = await User.findOne({ userId: tx.userId });
+        if (!user) {
+            return res.status(404).json({ status: 'failed', message: `User '${tx.userId}' not found` });
+        }
+
+        // If already credited, return immediately
+        if (tx.status === 'Success') {
+            return res.json({ status: 'success', message: 'Transaction already credited to wallet' });
+        }
+
+        const creditAmount = Number(payload.amount) || tx.amount;
         const balanceBefore = user.walletBalance;
         user.walletBalance = parseFloat((user.walletBalance + creditAmount).toFixed(2));
         await user.save();
@@ -340,19 +399,51 @@ router.post('/callback', async (req, res) => {
         tx.status = 'Success';
         tx.balanceBefore = balanceBefore;
         tx.balanceAfter = user.walletBalance;
-        tx.description = `Wallet Top-Up via PaySprint PG Webhook`;
+        tx.description = `Wallet Top-Up via PaySprint UPI Callback${utr ? ` (UTR: ${utr})` : ''}`;
+        tx.paysprintTxnId = utr || targetTxnId;
+        tx.paysprintResponse = payload;
         await tx.save();
 
-        console.log(`[PG Webhook Callback] Successfully credited ₹${creditAmount} to user ${user.userId}`);
-        res.json({ status: 'success', message: 'Callback processed, wallet credited' });
+        // Emit real-time WebSocket event
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('wallet_balance_updated', {
+                userId: user.userId,
+                walletBalance: user.walletBalance,
+                amount: creditAmount,
+                type: 'Credit',
+                txnId: targetTxnId,
+                utr: utr,
+                status: 'Success'
+            });
+            io.emit('payment_success', {
+                userId: user.userId,
+                walletBalance: user.walletBalance,
+                amount: creditAmount,
+                txnId: targetTxnId
+            });
+        }
+
+        console.log(`[PaySprint PG Callback] Successfully credited ₹${creditAmount} to user ${user.userId} (Ref: ${targetTxnId})`);
+        res.json({ status: 'success', message: 'Callback processed, wallet credited in real-time' });
     } catch (error) {
-        console.error('[PG Webhook Callback] Error processing callback:', error);
+        console.error('[PaySprint PG Callback] Error processing callback:', error);
         res.status(500).json({ status: 'error', message: error.message });
     }
+};
+
+router.post('/callback', handlePaySprintCallback);
+router.get('/callback', handlePaySprintCallback);
+
+// Callback debug logs
+router.get('/callback-logs', (req, res) => {
+    res.json({
+        total: recentCallbackLogs.length,
+        logs: recentCallbackLogs
+    });
 });
 
-// GET /api/direct-payment/balance/:userId
-// Fetch wallet balance for a user
+// Balance query helper
 router.get('/balance/:userId', async (req, res) => {
     try {
         const user = await User.findOne({
@@ -366,3 +457,4 @@ router.get('/balance/:userId', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.handlePaySprintCallback = handlePaySprintCallback;

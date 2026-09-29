@@ -24,6 +24,7 @@ const upiRoutes = require('./routes/upiRoutes');
 const paymentRequisitionRoutes = require('./routes/paymentRequisitionRoutes');
 const walletTransactionRoutes = require('./routes/walletTransactionRoutes');
 const directPaymentRoutes = require('./routes/directPaymentRoutes');
+const payoutRoutes = require('./routes/payoutRoutes');
 const panCardRoutes = require('./routes/panCardRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const staffRoutes = require('./routes/staffRoutes');
@@ -50,15 +51,21 @@ app.use('/api/upi-config', upiRoutes);
 app.use('/api/payment-requisitions', paymentRequisitionRoutes);
 app.use('/api/wallet-transactions', walletTransactionRoutes);
 app.use('/api/direct-payment', directPaymentRoutes);
+app.use('/api/payout', payoutRoutes);
 app.use('/api/pancard', panCardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
 
-// Callback forwarder for PaySprint's configured URL
-app.post('/UpiCollectionCallback.aspx', (req, res) => {
-    res.redirect(307, '/api/direct-payment/callback');
-});
+// Direct PaySprint Live Webhook Callback Endpoint
+const { handlePaySprintCallback } = require('./routes/directPaymentRoutes');
+const { handlePayoutCallback } = require('./routes/payoutRoutes');
+app.post('/UpiCollectionCallback.aspx', handlePaySprintCallback);
+app.get('/UpiCollectionCallback.aspx', handlePaySprintCallback);
+app.post('/api/direct-payment/callback', handlePaySprintCallback);
+app.get('/api/direct-payment/callback', handlePaySprintCallback);
+app.post('/api/payout/callback', handlePayoutCallback);
+app.get('/api/payout/callback', handlePayoutCallback);
 
 // Basic Route
 app.get('/', (req, res) => {

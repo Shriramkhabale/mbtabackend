@@ -25,26 +25,39 @@ router.get('/:userId', async (req, res) => {
     }
 });
 
-// POST request: Create a new user (for testing/registration)
+// POST request: Create a new user (for testing/registration/admin)
 router.post('/', async (req, res) => {
-    const { userId, email, password, mobile, role } = req.body;
+    const { userId, name, shopName, businessAddress, email, password, mobile, role, status, walletBalance } = req.body;
 
     try {
-        // Generate a dynamic unique Retailer ID (e.g. MBM123456)
+        // Generate a dynamic unique Retailer ID (e.g. MBM123456) if not provided
         const randomNum = Math.floor(100000 + Math.random() * 900000);
-        const generatedRetailerId = 'MBM' + randomNum;
+        const generatedRetailerId = req.body.retailerId || ('MBM' + randomNum);
 
         const newUser = new User({ 
-            userId, 
+            userId: (userId || '').trim(), 
             retailerId: generatedRetailerId, 
-            email, 
-            password, 
-            mobile, 
-            role 
+            name: (name || '').trim(),
+            shopName: (shopName || '').trim(),
+            businessAddress: (businessAddress || '').trim(),
+            email: email ? email.trim() : undefined, 
+            password: password || '123456', 
+            mobile: mobile ? mobile.trim() : undefined, 
+            role: role || 'retailer',
+            status: status || 'Approved',
+            walletBalance: parseFloat(walletBalance) || 0.00
         });
         await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
+        if (error.code === 11000) {
+            if (error.keyPattern && error.keyPattern.userId) {
+                return res.status(400).json({ message: 'User ID is already taken. Please choose another.' });
+            }
+            if (error.keyPattern && error.keyPattern.mobile) {
+                return res.status(400).json({ message: 'This Mobile Number is already registered.' });
+            }
+        }
         res.status(400).json({ message: error.message });
     }
 });
@@ -367,6 +380,51 @@ router.put('/:id/status', async (req, res) => {
             user
         });
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// PUT request: Update full user profile details (Admin edit)
+router.put('/:id', async (req, res) => {
+    const { name, shopName, businessAddress, email, mobile, role, status, password, walletBalance, retailerId } = req.body;
+
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (name !== undefined) user.name = (name || '').trim();
+        if (shopName !== undefined) user.shopName = (shopName || '').trim();
+        if (businessAddress !== undefined) user.businessAddress = (businessAddress || '').trim();
+        if (email !== undefined) user.email = email ? email.trim() : undefined;
+        if (mobile !== undefined) user.mobile = mobile ? mobile.trim() : undefined;
+        if (role !== undefined) user.role = role;
+        if (status !== undefined) user.status = status;
+        if (retailerId !== undefined && retailerId.trim()) user.retailerId = retailerId.trim();
+        if (password && password.trim() !== '') {
+            user.password = password.trim();
+        }
+        if (walletBalance !== undefined && !isNaN(walletBalance)) {
+            user.walletBalance = parseFloat(walletBalance);
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'User profile updated successfully.',
+            user
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            if (error.keyPattern && error.keyPattern.mobile) {
+                return res.status(400).json({ message: 'This Mobile Number is already in use by another user.' });
+            }
+            if (error.keyPattern && error.keyPattern.retailerId) {
+                return res.status(400).json({ message: 'This Retailer ID is already assigned.' });
+            }
+        }
         res.status(500).json({ message: error.message });
     }
 });

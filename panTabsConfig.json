@@ -3102,15 +3102,6 @@
     "description": "Update or correct personal details on your existing PAN Card record.",
     "fields": [
       {
-        "name": "panNumber",
-        "label": "EXISTING PAN NUMBER",
-        "type": "text",
-        "placeholder": "e.g. ABCDE1234F",
-        "required": true,
-        "formType": "Both",
-        "hidden": false
-      },
-      {
         "name": "category",
         "label": "CATEGORY OF APPLICANT",
         "type": "select",
@@ -3127,6 +3118,15 @@
           "ARTIFICIAL JURIDICAL PERSON",
           "GOVERNMENT"
         ],
+        "required": true,
+        "formType": "Both",
+        "hidden": false
+      },
+      {
+        "name": "panNumber",
+        "label": "EXISTING PAN NUMBER",
+        "type": "text",
+        "placeholder": "e.g. ABCDE1234F",
         "required": true,
         "formType": "Both",
         "hidden": false
@@ -3213,10 +3213,180 @@
         "hidden": false
       },
       {
+        "name": "addressType",
+        "label": "ADDRESS TYPE",
+        "type": "select",
+        "options": [
+          "RESIDENCE",
+          "OFFICE"
+        ],
+        "required": true,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "parentToPrint",
+        "label": "NAME OF PARENT TO PRINT ON PAN CARD",
+        "type": "select",
+        "options": [
+          "Father",
+          "Mother"
+        ],
+        "required": true,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "fatherFirstName",
+        "label": "FATHER'S FIRST NAME",
+        "type": "text",
+        "placeholder": "FATHER'S FIRST NAME",
+        "required": true,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "fatherMiddleName",
+        "label": "FATHER'S MIDDLE NAME",
+        "type": "text",
+        "placeholder": "FATHER'S MIDDLE NAME",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "fatherLastName",
+        "label": "FATHER'S LAST NAME",
+        "type": "text",
+        "placeholder": "FATHER'S LAST NAME",
+        "required": true,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "motherFirstName",
+        "label": "MOTHER'S FIRST NAME",
+        "type": "text",
+        "placeholder": "MOTHER'S FIRST NAME",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "motherMiddleName",
+        "label": "MOTHER'S MIDDLE NAME",
+        "type": "text",
+        "placeholder": "MOTHER'S MIDDLE NAME",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "motherLastName",
+        "label": "MOTHER'S LAST NAME",
+        "type": "text",
+        "placeholder": "MOTHER'S LAST NAME",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "proofOfDob",
+        "label": "PROOF OF DATE OF BIRTH",
+        "type": "select",
+        "options": [
+          "AADHAAR CARD",
+          "BIRTH CERTIFICATE",
+          "10TH CERTIFICATE",
+          "PASSPORT"
+        ],
+        "required": true,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "passportNumber",
+        "label": "PASSPORT NUMBER (IF APPLICABLE)",
+        "type": "text",
+        "placeholder": "PASSPORT NUMBER",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "photoUrl",
+        "label": "UPLOAD APPLICANT PHOTO",
+        "type": "file",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "proofOfDobUrl",
+        "label": "UPLOAD DATE OF BIRTH PROOF",
+        "type": "file",
+        "required": false,
+        "formType": "Form 93",
+        "hidden": false
+      },
+      {
+        "name": "entityName",
+        "label": "1. NAME OF FIRM / ENTITY",
+        "type": "text",
+        "placeholder": "ENTER FULL NAME OF FIRM",
+        "required": true,
+        "formType": "Form 94",
+        "hidden": false
+      },
+      {
+        "name": "dateOfIncorporation",
+        "label": "2. DATE OF INCORPORATION / AGREEMENT / TRUST DEED / FORMATION",
+        "type": "date",
+        "required": true,
+        "formType": "Form 94",
+        "hidden": false
+      },
+      {
+        "name": "registrationNumber",
+        "label": "REGISTRATION NUMBER (FOR COMPANY, FIRM, LLP, TRUST, ETC.)",
+        "type": "text",
+        "placeholder": "ENTER REGISTRATION / CIN NO.",
+        "required": false,
+        "formType": "Form 94",
+        "hidden": false
+      },
+      {
+        "name": "tin",
+        "label": "TAXPAYER IDENTIFICATION NUMBER (TIN IN COUNTRY OF RESIDENCE, IF ANY)",
+        "type": "text",
+        "placeholder": "ENTER TIN IN COUNTRY OF RESIDENCE (IF APPLICABLE)",
+        "required": false,
+        "formType": "Both",
+        "hidden": false
+      },
+      {
+        "name": "stdCode",
+        "label": "STD CODE",
+        "type": "text",
+        "placeholder": "STD",
+        "required": false,
+        "formType": "Form 94",
+        "hidden": false
+      },
+      {
+        "name": "landlineNumber",
+        "label": "LANDLINE NO. WITH STD CODE",
+        "type": "text",
+        "placeholder": "LANDLINE NO.",
+        "required": false,
+        "formType": "Form 94",
+        "hidden": false
+      },
+      {
         "name": "mobileNumber",
         "label": "MOBILE NO.",
         "type": "tel",
-        "placeholder": "MOBILE NO.",
+        "placeholder": "10-DIGIT MOBILE NO.",
         "required": true,
         "formType": "Both",
         "hidden": false
@@ -3225,45 +3395,45 @@
         "name": "email",
         "label": "EMAIL ID",
         "type": "email",
-        "placeholder": "EMAIL ID",
+        "placeholder": "OFFICIAL EMAIL ID",
         "required": true,
         "formType": "Both",
         "hidden": false
       },
       {
         "name": "flatNo",
-        "label": "FLAT / DOOR / BLOCK NO",
+        "label": "FLAT / DOOR / BUILDING",
         "type": "text",
-        "placeholder": "FLAT / DOOR / BLOCK NO",
+        "placeholder": "FLAT / DOOR / BUILDING",
         "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "premises",
-        "label": "PREMISES / BUILDING / VILLAGE",
-        "type": "text",
-        "placeholder": "PREMISES / BUILDING / VILLAGE",
-        "required": true,
-        "formType": "Form 93",
+        "formType": "Both",
         "hidden": false
       },
       {
         "name": "roadStreet",
-        "label": "ROAD / STREET / POST OFFICE",
+        "label": "ROAD / STREET / BLOCK / SECTOR",
         "type": "text",
-        "placeholder": "ROAD / STREET / POST OFFICE",
+        "placeholder": "ROAD / STREET / BLOCK / SECTOR",
         "required": true,
-        "formType": "Form 93",
+        "formType": "Both",
+        "hidden": false
+      },
+      {
+        "name": "postOffice",
+        "label": "POST OFFICE",
+        "type": "text",
+        "placeholder": "POST OFFICE",
+        "required": true,
+        "formType": "Both",
         "hidden": false
       },
       {
         "name": "areaTaluka",
-        "label": "AREA / TALUKA / SUB DIVISION",
+        "label": "AREA / LOCALITY / TOWN / CITY",
         "type": "text",
-        "placeholder": "AREA / TALUKA / SUB DIVISION",
+        "placeholder": "AREA / LOCALITY / TOWN / CITY",
         "required": true,
-        "formType": "Form 93",
+        "formType": "Both",
         "hidden": false
       },
       {
@@ -3310,12 +3480,12 @@
           "WEST BENGAL"
         ],
         "required": true,
-        "formType": "Form 93",
+        "formType": "Both",
         "hidden": false
       },
       {
         "name": "district",
-        "label": "TOWN / DISTRICT",
+        "label": "DISTRICT",
         "type": "select",
         "options": [
           "SELECT",
@@ -4078,82 +4248,25 @@
           "ZUNHEBOTO"
         ],
         "required": true,
-        "formType": "Form 93",
+        "formType": "Both",
+        "hidden": false
+      },
+      {
+        "name": "country",
+        "label": "COUNTRY / REGION",
+        "type": "text",
+        "placeholder": "INDIA",
+        "required": true,
+        "formType": "Both",
         "hidden": false
       },
       {
         "name": "pincode",
-        "label": "PINCODE",
+        "label": "PIN / ZIP CODE",
         "type": "text",
-        "placeholder": "PINCODE",
+        "placeholder": "PIN / ZIP CODE",
         "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "parentToPrint",
-        "label": "PARENT NAME TO PRINT ON PAN CARD",
-        "type": "select",
-        "options": [
-          "Father",
-          "Mother"
-        ],
-        "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "fatherFirstName",
-        "label": "FATHER'S FIRST NAME",
-        "type": "text",
-        "placeholder": "FATHER'S FIRST NAME",
-        "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "fatherMiddleName",
-        "label": "FATHER'S MIDDLE NAME",
-        "type": "text",
-        "placeholder": "FATHER'S MIDDLE NAME",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "fatherLastName",
-        "label": "FATHER'S LAST NAME",
-        "type": "text",
-        "placeholder": "FATHER'S LAST NAME",
-        "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "motherFirstName",
-        "label": "MOTHER'S FIRST NAME",
-        "type": "text",
-        "placeholder": "MOTHER'S FIRST NAME",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "motherMiddleName",
-        "label": "MOTHER'S MIDDLE NAME",
-        "type": "text",
-        "placeholder": "MOTHER'S MIDDLE NAME",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "motherLastName",
-        "label": "MOTHER'S LAST NAME",
-        "type": "text",
-        "placeholder": "MOTHER'S LAST NAME",
-        "required": false,
-        "formType": "Form 93",
+        "formType": "Both",
         "hidden": false
       },
       {
@@ -4164,10 +4277,14 @@
           "AADHAAR CARD",
           "VOTER ID CARD",
           "PASSPORT",
-          "DRIVING LICENSE"
+          "DRIVING LICENSE",
+          "CERTIFICATE OF INCORPORATION / REGISTRATION",
+          "PARTNERSHIP DEED",
+          "TRUST DEED",
+          "LLP AGREEMENT"
         ],
         "required": true,
-        "formType": "Form 93",
+        "formType": "Both",
         "hidden": false
       },
       {
@@ -4178,369 +4295,99 @@
           "AADHAAR CARD",
           "VOTER ID CARD",
           "PASSPORT",
-          "UTILITY BILL"
+          "UTILITY BILL",
+          "BANK STATEMENT",
+          "REGISTRATION CERTIFICATE"
         ],
         "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "proofOfDob",
-        "label": "PROOF OF DATE OF BIRTH",
-        "type": "select",
-        "options": [
-          "AADHAAR CARD",
-          "BIRTH CERTIFICATE",
-          "10TH CERTIFICATE",
-          "PASSPORT"
-        ],
-        "required": true,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "passportNumber",
-        "label": "PASSPORT NUMBER (IF APPLICABLE)",
-        "type": "text",
-        "placeholder": "PASSPORT NUMBER",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "photoUrl",
-        "label": "UPLOAD APPLICANT PHOTO",
-        "type": "file",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "signatureUrl",
-        "label": "UPLOAD APPLICANT SIGNATURE",
-        "type": "file",
-        "required": false,
-        "formType": "Form 93",
-        "hidden": false
-      },
-      {
-        "name": "entityName",
-        "label": "NAME OF FIRM / COMPANY / TRUST / ENTITY (FORM 94)",
-        "type": "text",
-        "placeholder": "NAME OF ENTITY / FIRM",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "dateOfIncorporation",
-        "label": "DATE OF INCORPORATION / AGREEMENT / FORMATION (FORM 94)",
-        "type": "date",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "registrationNumber",
-        "label": "REGISTRATION NUMBER (IF ANY) (FORM 94)",
-        "type": "text",
-        "placeholder": "REGISTRATION NUMBER",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "incomeSource",
-        "label": "SOURCE OF INCOME (FORM 94)",
-        "type": "select",
-        "options": [
-          "Income from Business/Profession",
-          "Salary",
-          "Capital Gains",
-          "Income from House Property",
-          "Income from Other Sources",
-          "No Income"
-        ],
-        "required": false,
-        "formType": "Form 94",
+        "formType": "Both",
         "hidden": false
       },
       {
         "name": "proofOfIncorporation",
-        "label": "PROOF OF INCORPORATION / REGISTRATION (FORM 94)",
+        "label": "PROOF OF INCORPORATION / AGREEMENT / DEED",
         "type": "select",
         "options": [
-          "CERTIFICATE OF INCORPORATION / REGISTRATION",
+          "REGISTRATION CERTIFICATE ISSUED BY REGISTRAR OF COMPANIES",
           "PARTNERSHIP DEED",
-          "TRUST DEED / AGREEMENT",
-          "REGISTRATION CERTIFICATE"
+          "TRUST DEED",
+          "LLP AGREEMENT",
+          "CERTIFICATE OF INCORPORATION"
         ],
-        "required": false,
+        "required": true,
         "formType": "Form 94",
         "hidden": false
       },
       {
-        "name": "commFlatNo",
-        "label": "OFFICE FLAT/DOOR/BLOCK NO (FORM 94)",
-        "type": "text",
-        "placeholder": "OFFICE FLAT NO",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "commPremises",
-        "label": "OFFICE PREMISES/BUILDING/VILLAGE (FORM 94)",
-        "type": "text",
-        "placeholder": "OFFICE PREMISES",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "commRoadStreet",
-        "label": "OFFICE ROAD/STREET/POST OFFICE (FORM 94)",
-        "type": "text",
-        "placeholder": "OFFICE ROAD STREET",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "commAreaTaluka",
-        "label": "OFFICE AREA/TALUKA/SUB DIVISION (FORM 94)",
-        "type": "text",
-        "placeholder": "OFFICE AREA TALUKA",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "commState",
-        "label": "OFFICE STATE (FORM 94)",
+        "name": "copyOfPan",
+        "label": "PROOF OF PAN",
         "type": "select",
         "options": [
-          "PLEASE SELECT",
-          "MAHARASHTRA",
-          "KARNATAKA",
-          "GUJARAT",
-          "DELHI",
-          "UTTAR PRADESH"
+          "COPY OF PAN CARD ATTACHED",
+          "PAN ALLOTMENT LETTER ATTACHED",
+          "NO PAN COPY ATTACHED"
         ],
         "required": false,
-        "formType": "Form 94",
+        "formType": "Both",
         "hidden": false
       },
       {
-        "name": "commDistrict",
-        "label": "OFFICE TOWN/DISTRICT (FORM 94)",
-        "type": "select",
-        "options": [
-          "SELECT",
-          "MUMBAI",
-          "PUNE",
-          "NAGPUR",
-          "THANE",
-          "BANGALORE"
-        ],
+        "name": "signatureUrl",
+        "label": "UPLOAD APPLICANT / SIGNATORY SIGNATURE",
+        "type": "file",
         "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "commPincode",
-        "label": "OFFICE PINCODE (FORM 94)",
-        "type": "text",
-        "placeholder": "OFFICE PINCODE",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raTitle",
-        "label": "REPRESENTATIVE ASSESSEE TITLE (FORM 94)",
-        "type": "select",
-        "options": [
-          "SHRI",
-          "SMT",
-          "KUMARI",
-          "M/S"
-        ],
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raFirstName",
-        "label": "REPRESENTATIVE ASSESSEE FIRST NAME (FORM 94)",
-        "type": "text",
-        "placeholder": "RA FIRST NAME",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raMiddleName",
-        "label": "REPRESENTATIVE ASSESSEE MIDDLE NAME (FORM 94)",
-        "type": "text",
-        "placeholder": "RA MIDDLE NAME",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raLastName",
-        "label": "REPRESENTATIVE ASSESSEE LAST NAME (FORM 94)",
-        "type": "text",
-        "placeholder": "RA LAST NAME",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raPanNumber",
-        "label": "REPRESENTATIVE ASSESSEE PAN (FORM 94)",
-        "type": "text",
-        "placeholder": "RA PAN NUMBER",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raAadhaarNumber",
-        "label": "REPRESENTATIVE ASSESSEE AADHAAR NO (FORM 94)",
-        "type": "text",
-        "placeholder": "RA AADHAAR NO",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raMobileNumber",
-        "label": "REPRESENTATIVE ASSESSEE MOBILE NO (FORM 94)",
-        "type": "text",
-        "placeholder": "RA MOBILE NO",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raEmail",
-        "label": "REPRESENTATIVE ASSESSEE EMAIL ID (FORM 94)",
-        "type": "email",
-        "placeholder": "RA EMAIL ID",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raFlatNo",
-        "label": "REPRESENTATIVE ASSESSEE FLAT NO (FORM 94)",
-        "type": "text",
-        "placeholder": "RA FLAT NO",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raRoadStreet",
-        "label": "REPRESENTATIVE ASSESSEE ROAD/STREET (FORM 94)",
-        "type": "text",
-        "placeholder": "RA ROAD STREET",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raAreaTaluka",
-        "label": "REPRESENTATIVE ASSESSEE AREA/TALUKA (FORM 94)",
-        "type": "text",
-        "placeholder": "RA AREA TALUKA",
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raDistrict",
-        "label": "REPRESENTATIVE ASSESSEE DISTRICT (FORM 94)",
-        "type": "select",
-        "options": [
-          "SELECT",
-          "MUMBAI",
-          "PUNE",
-          "NAGPUR",
-          "THANE",
-          "BANGALORE"
-        ],
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raState",
-        "label": "REPRESENTATIVE ASSESSEE STATE (FORM 94)",
-        "type": "select",
-        "options": [
-          "PLEASE SELECT",
-          "MAHARASHTRA",
-          "KARNATAKA",
-          "GUJARAT",
-          "DELHI",
-          "UTTAR PRADESH"
-        ],
-        "required": false,
-        "formType": "Form 94",
-        "hidden": false
-      },
-      {
-        "name": "raPincode",
-        "label": "REPRESENTATIVE ASSESSEE PINCODE (FORM 94)",
-        "type": "text",
-        "placeholder": "RA PINCODE",
-        "required": false,
-        "formType": "Form 94",
+        "formType": "Both",
         "hidden": false
       },
       {
         "name": "verifierName",
-        "label": "VERIFIER NAME (FORM 94)",
+        "label": "AUTHORIZED SIGNATORY / VERIFIER NAME",
         "type": "text",
-        "placeholder": "VERIFIER NAME",
-        "required": false,
+        "placeholder": "AUTHORIZED SIGNATORY / VERIFIER NAME",
+        "required": true,
         "formType": "Form 94",
         "hidden": false
       },
       {
-        "name": "verifierCapacity",
-        "label": "VERIFIER CAPACITY (FORM 94)",
+        "name": "designationofsignatory",
+        "label": "DESIGNATION OF SIGNATORY",
         "type": "select",
+        "placeholder": "",
+        "icon": "📝",
+        "required": true,
+        "hidden": false,
+        "formType": "Form 94",
         "options": [
           "PARTNER",
           "DIRECTOR",
           "TRUSTEE",
-          "AUTHORISED SIGNATORY",
-          "PROPRIETOR",
+          "AUTHOURISED SIGNATORY",
+          "PROPERITOR",
           "KARTA"
-        ],
+        ]
+      },
+      {
+        "name": "proofOfIncorporationUrl",
+        "label": "UPLOAD REGISTRATION CERTIFICATE (ROC / DEED)",
+        "type": "file",
         "required": false,
         "formType": "Form 94",
         "hidden": false
       },
       {
-        "name": "verifierPlace",
-        "label": "VERIFIER PLACE (FORM 94)",
-        "type": "text",
-        "placeholder": "VERIFIER PLACE",
+        "name": "proofOfIdentityUrl",
+        "label": "UPLOAD IDENTITY PROOF",
+        "type": "file",
         "required": false,
-        "formType": "Form 94",
+        "formType": "Both",
         "hidden": false
       },
       {
-        "name": "verifierDate",
-        "label": "VERIFIER DATE (FORM 94)",
-        "type": "date",
+        "name": "proofOfAddressUrl",
+        "label": "UPLOAD ADDRESS PROOF",
+        "type": "file",
         "required": false,
-        "formType": "Form 94",
+        "formType": "Both",
         "hidden": false
       }
     ]
