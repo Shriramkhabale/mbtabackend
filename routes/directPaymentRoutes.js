@@ -425,32 +425,54 @@ router.get('/debug-paysprint', async (req, res) => {
 
         results.qrTests = [];
         
-        // Test 1: Normal Product
-        try {
-            const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
-                method: 'POST',
-                headers: getHeaders('ONBOARDING'),
-                body: JSON.stringify(qrBody)
-            });
-            const text = await psRes.text();
-            let parsed;
-            try { parsed = JSON.parse(text); } catch { parsed = text; }
-            results.qrTests.push({ name: 'Onboarding (ONBOARDING)', response: parsed });
-        } catch (e) {}
+        // Helper to test a specific JWT token
+        const testJwt = async (name, testToken) => {
+            try {
+                const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
+                    method: 'POST',
+                    headers: {
+                        'Token': testToken,
+                        'accept': 'application/json',
+                        'content-type': 'application/json',
+                        'User-Agent': partnerId,
+                        'Authorisedkey': process.env.AUTHORISED_KEY || ''
+                    },
+                    body: JSON.stringify(qrBody)
+                });
+                const text = await psRes.text();
+                let parsed;
+                try { parsed = JSON.parse(text); } catch { parsed = text; }
+                results.qrTests.push({ name, response: parsed });
+            } catch (e) {
+                results.qrTests.push({ name, error: e.message });
+            }
+        };
 
-        // Test 2: CORE product
-        try {
-            const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
-                method: 'POST',
-                headers: getHeaders('CORE'),
-                body: JSON.stringify(qrBody)
-            });
-            const text = await psRes.text();
-            let parsed;
-            try { parsed = JSON.parse(text); } catch { parsed = text; }
-            results.qrTests.push({ name: 'Onboarding (CORE)', response: parsed });
-        } catch (e) {}
+        const crypto = require('crypto');
+        const base64url = (str) => str.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
         
+        const generateTestToken = (secret) => {
+            const headerB64 = base64url(Buffer.from(JSON.stringify({ typ: 'JWT', alg: 'HS256' })));
+            const payloadB64 = base64url(Buffer.from(JSON.stringify({
+                iss: 'PAYSPRINT', timestamp: Math.floor(Date.now() / 1000), partnerId: partnerId, product: 'ONBOARDING', reqid: '123456'
+            })));
+            const signatureInput = `${headerB64}.${payloadB64}`;
+            const signature = crypto.createHmac('sha256', secret).update(signatureInput).digest();
+            return `${signatureInput}.${base64url(signature)}`;
+        };
+
+        const jwtKeyStr = process.env.JWT_KEY || '';
+        const jwtKeyBuf = Buffer.from(jwtKeyStr, 'base64');
+        const jwtKeyDecodedStr = jwtKeyBuf.toString('utf8');
+        const jwtSecretPart = jwtKeyDecodedStr.replace(partnerId, ''); // Just the secret part
+
+        await testJwt('Variant 1 (Raw Base64 String)', generateTestToken(jwtKeyStr));
+        await testJwt('Variant 2 (Base64 Buffer)', generateTestToken(jwtKeyBuf));
+        await testJwt('Variant 3 (Decoded String)', generateTestToken(jwtKeyDecodedStr));
+        if (jwtSecretPart) {
+            await testJwt('Variant 4 (Just Secret Part)', generateTestToken(jwtSecretPart));
+        }
+
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
