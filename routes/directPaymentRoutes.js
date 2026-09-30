@@ -128,94 +128,19 @@ router.post('/initiate', async (req, res) => {
         });
         await pendingTx.save();
 
-        let qrData = null;
-        let upiLink = '';
-        let checkoutUrl = '';
+        // 1. Generate Static PaySprint UPI Collection QR
+        const UPIConfig = require('../models/UPIConfig');
+        const upiConfig = await UPIConfig.findOne();
+        
+        // If the admin hasn't set their UPI ID in the DB, fallback to their PaySprint VPA (can be added to .env)
+        const merchantUpiId = (upiConfig && upiConfig.upiId) ? upiConfig.upiId : (process.env.PAYSPRINT_UPI_ID || 'mbmitra@icici');
 
-        const partnerId = getPartnerId();
-        const baseUrl = getBaseUrl();
-        const headers = getHeaders('WALLET');
-
-        // 1. Try PaySprint UPI Cashout / Dynamic QR Token
-        try {
-            const tokenRes = await fetch(`${baseUrl}/service-api/api/v1/service/upi/cashout/get_token`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    merchant_code: partnerId,
-                    redirect_url: `https://api.mbmitra.in/api/direct-payment/callback?txnid=${txnId}`
-                })
-            });
-
-            if (tokenRes.ok) {
-                const tokenData = await tokenRes.json();
-                console.log('[PaySprint Cashout Token] Response:', tokenData);
-                if (tokenData && (tokenData.status === true || tokenData.response_code === 1) && tokenData.url) {
-                    checkoutUrl = tokenData.url;
-                }
-            }
-        } catch (e) {
-            console.warn('[PaySprint Cashout Token Exception]:', e.message);
-        }
-
-        // 2. Try PaySprint UPI QR Generation
-        try {
-            const qrEndpoints = [
-                `${baseUrl}/api/v1/service/upi/upiqr/generate`,
-                `${baseUrl}/service-api/api/v1/service/upi/upiqr/generate`,
-                `${baseUrl}/api/v1/service/upi/dynamicqr`
-            ];
-
-            const qrBody = {
-                amount: String(Number(amount).toFixed(2)),
-                txnid: txnId,
-                mobile: user.mobile || '8766020070',
-                email: user.email || 'customer@mbmitra.com',
-                name: user.name || 'Retailer',
-                remarks: 'Wallet TopUp'
-            };
-
-            for (const url of qrEndpoints) {
-                try {
-                    const psRes = await fetch(url, {
-                        method: 'POST',
-                        headers,
-                        body: JSON.stringify(qrBody)
-                    });
-
-                    if (psRes.ok) {
-                        const data = await psRes.json();
-                        console.log(`[PaySprint QR Gen ${url}] Response:`, data);
-                        if (data && (data.status === true || data.response_code === 1 || data.qr_url || data.qrCode || data.qr_code)) {
-                            qrData = data.qr_url || data.qrCode || data.qr_code || (data.data && (data.data.qr_url || data.data.qrCode));
-                            upiLink = data.upi_link || data.upiLink || (data.data && (data.data.upi_link || data.data.upiLink)) || '';
-                            if (qrData || upiLink) break;
-                        }
-                    }
-                } catch (innerErr) {
-                    // Try next endpoint
-                }
-            }
-        } catch (err) {
-            console.error('[PaySprint QR Generation Exception]:', err.message);
-        }
-
-        // Log result so we know which path was taken
-        if (!qrData && !upiLink) {
-            console.warn('[PaySprint QR] All PaySprint endpoints failed — falling back to UPI config QR. Check server logs for [PaySprint QR Gen ...] responses above.');
-        } else {
-            console.log('[PaySprint QR] Successfully got QR from PaySprint API.');
-        }
-
-        // 3. Handle PaySprint failure instead of falling back to default QR
-        if (!qrData && !upiLink && !checkoutUrl) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Failed to generate PaySprint QR Code. Ensure IP is whitelisted and API credentials are correct on this server.'
-            });
-        } else if (upiLink && !qrData) {
-            qrData = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiLink)}`;
-        }
+        // Create the UPI Intent Link
+        const upiLink = `upi://pay?pa=${merchantUpiId}&pn=MB%20MITRA&am=${Number(amount).toFixed(2)}&tr=${txnId}&tn=Wallet%20TopUp&cu=INR`;
+        
+        // Generate QR Image using a public API
+        const qrData = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiLink)}`;
+        const checkoutUrl = '';
 
         res.json({
             success: true,
