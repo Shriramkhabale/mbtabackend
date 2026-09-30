@@ -476,6 +476,7 @@ router.get('/debug-paysprint', async (req, res) => {
 
         // Test QR generation endpoints
         const qrEndpoints = [
+            `${baseUrl}/service-api/api/v1/service/upi/cashout/get_token`,
             `${baseUrl}/api/v1/service/upi/upiqr/generate`,
             `${baseUrl}/service-api/api/v1/service/upi/upiqr/generate`,
             `${baseUrl}/api/v1/service/upi/dynamicqr`
@@ -484,6 +485,8 @@ router.get('/debug-paysprint', async (req, res) => {
         const qrBody = {
             amount: '1.00',
             txnid: testTxnId,
+            merchant_code: partnerId,
+            redirect_url: `https://api.mbmitra.in/api/direct-payment/callback?txnid=${testTxnId}`,
             mobile: '9999999999',
             email: 'test@mbmitra.com',
             name: 'Test Retailer',
