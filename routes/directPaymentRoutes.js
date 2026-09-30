@@ -200,12 +200,19 @@ router.post('/initiate', async (req, res) => {
             console.error('[PaySprint QR Generation Exception]:', err.message);
         }
 
-        // 3. Fallback to Dynamic UPI String encoded with Transaction ID & Merchant VPA
+        // Log result so we know which path was taken
         if (!qrData && !upiLink) {
-            const upiConfig = await UPIConfig.findOne();
-            const merchantUpiId = upiConfig && upiConfig.upiId ? upiConfig.upiId : 'MBTA@ICICI';
-            upiLink = `upi://pay?pa=${merchantUpiId}&pn=MB%20MITRA%20PAYSPRINT&am=${Number(amount).toFixed(2)}&tr=${txnId}&tn=PaySprint%20Wallet%20TopUp&cu=INR`;
-            qrData = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiLink)}`;
+            console.warn('[PaySprint QR] All PaySprint endpoints failed — falling back to UPI config QR. Check server logs for [PaySprint QR Gen ...] responses above.');
+        } else {
+            console.log('[PaySprint QR] Successfully got QR from PaySprint API.');
+        }
+
+        // 3. Handle PaySprint failure instead of falling back to default QR
+        if (!qrData && !upiLink) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Failed to generate PaySprint QR Code. Ensure IP is whitelisted and API credentials are correct on this server.'
+            });
         } else if (upiLink && !qrData) {
             qrData = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiLink)}`;
         }
@@ -441,6 +448,73 @@ router.get('/callback-logs', (req, res) => {
         total: recentCallbackLogs.length,
         logs: recentCallbackLogs
     });
+});
+
+/**
+ * GET /api/direct-payment/debug-paysprint
+ * Diagnostic endpoint — tests PaySprint credentials and shows raw API response.
+ * REMOVE this route before going to production.
+ */
+router.get('/debug-paysprint', async (req, res) => {
+    try {
+        const partnerId = getPartnerId();
+        const baseUrl = getBaseUrl();
+        const headers = getHeaders('WALLET');
+        const testTxnId = 'PSTEST' + Date.now();
+
+        const results = {};
+
+        // Show what credentials are being used
+        results.config = {
+            partnerId,
+            baseUrl,
+            environment: process.env.ENVIRONMENT,
+            jwtKeyPresent: !!process.env.JWT_KEY,
+            authorisedKeyPresent: !!process.env.AUTHORISED_KEY,
+            headers: { ...headers, Token: headers.Token ? headers.Token.substring(0, 30) + '...' : 'MISSING' }
+        };
+
+        // Test QR generation endpoints
+        const qrEndpoints = [
+            `${baseUrl}/api/v1/service/upi/upiqr/generate`,
+            `${baseUrl}/service-api/api/v1/service/upi/upiqr/generate`,
+            `${baseUrl}/api/v1/service/upi/dynamicqr`
+        ];
+
+        const qrBody = {
+            amount: '1.00',
+            txnid: testTxnId,
+            mobile: '9999999999',
+            email: 'test@mbmitra.com',
+            name: 'Test Retailer',
+            remarks: 'Debug Test'
+        };
+
+        results.qrTests = [];
+        for (const url of qrEndpoints) {
+            try {
+                const psRes = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(qrBody)
+                });
+                const text = await psRes.text();
+                let parsed;
+                try { parsed = JSON.parse(text); } catch { parsed = text; }
+                results.qrTests.push({
+                    url,
+                    httpStatus: psRes.status,
+                    response: parsed
+                });
+            } catch (e) {
+                results.qrTests.push({ url, error: e.message });
+            }
+        }
+
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Balance query helper
