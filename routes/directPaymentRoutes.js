@@ -425,8 +425,10 @@ router.get('/debug-paysprint', async (req, res) => {
 
         results.qrTests = [];
         
-        // Helper to test a specific JWT token
-        const testJwt = async (name, testToken) => {
+        const authKeyStr = process.env.AUTHORISED_KEY || '';
+        const authKeyDecoded = Buffer.from(authKeyStr, 'base64').toString('utf8');
+        
+        const testJwt = async (name, testToken, testAuthKey) => {
             try {
                 const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
                     method: 'POST',
@@ -435,7 +437,7 @@ router.get('/debug-paysprint', async (req, res) => {
                         'accept': 'application/json',
                         'content-type': 'application/json',
                         'User-Agent': partnerId,
-                        'Authorisedkey': process.env.AUTHORISED_KEY || ''
+                        'Authorisedkey': testAuthKey
                     },
                     body: JSON.stringify(qrBody)
                 });
@@ -462,17 +464,11 @@ router.get('/debug-paysprint', async (req, res) => {
         };
 
         const jwtKeyStr = process.env.JWT_KEY || '';
-        const jwtKeyBuf = Buffer.from(jwtKeyStr, 'base64');
-        const jwtKeyDecodedStr = jwtKeyBuf.toString('utf8');
-        const jwtSecretPart = jwtKeyDecodedStr.replace(partnerId, ''); // Just the secret part
+        const validToken = generateTestToken(jwtKeyStr);
 
-        await testJwt('Variant 1 (Raw Base64 String)', generateTestToken(jwtKeyStr));
-        await testJwt('Variant 2 (Base64 Buffer)', generateTestToken(jwtKeyBuf));
-        await testJwt('Variant 3 (Decoded String)', generateTestToken(jwtKeyDecodedStr));
-        if (jwtSecretPart) {
-            await testJwt('Variant 4 (Just Secret Part)', generateTestToken(jwtSecretPart));
-        }
-
+        await testJwt('Variant A (Raw AuthKey)', validToken, authKeyStr);
+        await testJwt('Variant B (Decoded AuthKey)', validToken, authKeyDecoded);
+        
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
