@@ -208,7 +208,7 @@ router.post('/initiate', async (req, res) => {
         }
 
         // 3. Handle PaySprint failure instead of falling back to default QR
-        if (!qrData && !upiLink) {
+        if (!qrData && !upiLink && !checkoutUrl) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Failed to generate PaySprint QR Code. Ensure IP is whitelisted and API credentials are correct on this server.'
