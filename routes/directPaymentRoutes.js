@@ -408,46 +408,49 @@ router.get('/debug-paysprint', async (req, res) => {
             headers: { ...headers, Token: headers.Token ? headers.Token.substring(0, 30) + '...' : 'MISSING' }
         };
 
-        // Test QR generation endpoints
+        // Test QR generation endpoints and Onboarding
         const qrEndpoints = [
             `${baseUrl}/service-api/api/v1/service/upi/cashout/get_token`,
-            `${baseUrl}/api/v1/service/upi/upiqr/generate`,
-            `${baseUrl}/service-api/api/v1/service/upi/upiqr/generate`,
-            `${baseUrl}/api/v1/service/upi/dynamicqr`
+            `${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`
         ];
 
         const qrBody = {
-            amount: '1.00',
-            txnid: testTxnId,
-            merchant_code: partnerId,
-            redirect_url: `https://api.mbmitra.in/api/direct-payment/callback?txnid=${testTxnId}`,
+            merchantcode: partnerId,
             mobile: '9999999999',
+            is_new: '1',
             email: 'test@mbmitra.com',
-            name: 'Test Retailer',
-            remarks: 'Debug Test'
+            firm: 'Debug Test',
+            callback: 'https://api.mbmitra.in/api/paysprint/onboard/callback'
         };
 
         results.qrTests = [];
-        for (const url of qrEndpoints) {
-            try {
-                const psRes = await fetch(url, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(qrBody)
-                });
-                const text = await psRes.text();
-                let parsed;
-                try { parsed = JSON.parse(text); } catch { parsed = text; }
-                results.qrTests.push({
-                    url,
-                    httpStatus: psRes.status,
-                    response: parsed
-                });
-            } catch (e) {
-                results.qrTests.push({ url, error: e.message });
-            }
-        }
+        
+        // Test 1: Normal Product
+        try {
+            const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
+                method: 'POST',
+                headers: getHeaders('ONBOARDING'),
+                body: JSON.stringify(qrBody)
+            });
+            const text = await psRes.text();
+            let parsed;
+            try { parsed = JSON.parse(text); } catch { parsed = text; }
+            results.qrTests.push({ name: 'Onboarding (ONBOARDING)', response: parsed });
+        } catch (e) {}
 
+        // Test 2: CORE product
+        try {
+            const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
+                method: 'POST',
+                headers: getHeaders('CORE'),
+                body: JSON.stringify(qrBody)
+            });
+            const text = await psRes.text();
+            let parsed;
+            try { parsed = JSON.parse(text); } catch { parsed = text; }
+            results.qrTests.push({ name: 'Onboarding (CORE)', response: parsed });
+        } catch (e) {}
+        
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
