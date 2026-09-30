@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema({
         enum: ['Pending', 'Approved', 'Rejected'],
         default: 'Approved' // Existing accounts default to Approved
     },
+    isPaySprintOnboarded: {
+        type: Boolean,
+        default: false
+    },
     walletBalance: {
         type: Number,
         default: 0.00

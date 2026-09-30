@@ -112,6 +112,15 @@ router.post('/initiate', async (req, res) => {
             return res.status(404).json({ success: false, message: `User '${userId}' not found.` });
         }
 
+        // COMPULSORY ONBOARDING CHECK
+        if (!user.isPaySprintOnboarded) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'ONBOARDING_REQUIRED',
+                description: 'Please complete your PaySprint Onboarding KYC before adding funds to your wallet.' 
+            });
+        }
+
         // Generate a unique PaySprint transaction reference ID
         const txnId = 'PS' + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
