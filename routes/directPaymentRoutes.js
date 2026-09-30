@@ -138,12 +138,12 @@ router.post('/initiate', async (req, res) => {
 
         // 1. Try PaySprint UPI Cashout / Dynamic QR Token
         try {
-            const tokenRes = await fetch(`${baseUrl}/api/v1/service/upi/cashout/get_token`, {
+            const tokenRes = await fetch(`${baseUrl}/service-api/api/v1/service/upi/cashout/get_token`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
                     merchant_code: partnerId,
-                    redirect_url: `https://b2b.mbmitra.com/api/direct-payment/callback?txnid=${txnId}`
+                    redirect_url: `https://api.mbmitra.in/api/direct-payment/callback?txnid=${txnId}`
                 })
             });
 
