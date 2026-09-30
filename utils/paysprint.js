@@ -18,7 +18,8 @@ const getPartnerId = () => {
         try {
             const decoded = Buffer.from(jwtKey, 'base64').toString('utf8');
             if (decoded && decoded.startsWith('PS')) {
-                const match = decoded.match(/^(PS[0-9A-Za-z]+)/);
+                // Partner ID is typically PS followed by 7 digits.
+                const match = decoded.match(/^(PS\d{7})/);
                 if (match) {
                     partnerId = match[1];
                 }
