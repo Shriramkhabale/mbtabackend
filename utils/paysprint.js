@@ -43,8 +43,11 @@ const getBaseUrl = () => {
  * Generate PaySprint HS256 JWT Token
  */
 const generateToken = (product = 'WALLET') => {
-    const jwtKey = process.env.JWT_KEY || 'UFMwMDMzNzE0ZGU5MzU0NDIzNGFkZmZiYjY4MWVkNjBmZmNmYjk0MQ==';
+    const jwtKeyRaw = process.env.JWT_KEY || 'UFMwMDMzNzE0ZGU5MzU0NDIzNGFkZmZiYjY4MWVkNjBmZmNmYjk0MQ==';
     const partnerId = getPartnerId();
+
+    // PaySprint JWT_KEY is base64-encoded — decode it to raw bytes for HMAC signing
+    const jwtKeyBytes = Buffer.from(jwtKeyRaw, 'base64');
 
     const header = { typ: 'JWT', alg: 'HS256' };
     const payload = {
@@ -59,7 +62,8 @@ const generateToken = (product = 'WALLET') => {
     const payloadB64 = base64url(Buffer.from(JSON.stringify(payload)));
     const signatureInput = `${headerB64}.${payloadB64}`;
 
-    const signature = crypto.createHmac('sha256', jwtKey)
+    // Use the decoded bytes as the HMAC secret (not the raw base64 string)
+    const signature = crypto.createHmac('sha256', jwtKeyBytes)
         .update(signatureInput)
         .digest();
     const signatureB64 = base64url(signature);
@@ -72,8 +76,11 @@ const generateToken = (product = 'WALLET') => {
  */
 const getHeaders = (product = 'WALLET') => {
     const token = generateToken(product);
-    const authKey = process.env.AUTHORISED_KEY || '';
+    const authKeyRaw = process.env.AUTHORISED_KEY || '';
     const partnerId = getPartnerId();
+
+    // PaySprint AUTHORISED_KEY is base64-encoded — send the decoded hex string
+    const authKey = authKeyRaw ? Buffer.from(authKeyRaw, 'base64').toString('utf8') : '';
 
     const headers = {
         'Token': token,

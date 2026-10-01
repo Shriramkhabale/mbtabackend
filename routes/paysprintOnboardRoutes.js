@@ -24,18 +24,24 @@ router.post('/generate-url', async (req, res) => {
         }
 
         const baseUrl = getBaseUrl();
-        // The Onboarding API usually requires the general API environment URL
         const onboardUrl = `${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`;
-        const headers = getHeaders('ONBOARDING'); // You can pass product code if required
+        const headers = getHeaders('ONBOARDING');
 
         const payload = {
-            merchantcode: user.retailerId || user.userId, // Unique ID for the merchant
+            merchantcode: user.retailerId || user.userId,
             mobile: user.mobile || '9999999999',
-            is_new: '0', // '0' for existing, '1' for new. Use '0' if they might be partially onboarded
+            is_new: '0',
             email: user.email || 'retailer@mbmitra.com',
             firm: user.shopName || user.name || 'MB Mitra Retailer',
-            callback: `https://api.mbmitra.in/api/paysprint/onboard/callback` // Webhook/Redirect URL
+            callback: `https://api.mbmitra.in/api/paysprint/onboard/callback`
         };
+
+        // Log outgoing server IP for debugging whitelist issues
+        try {
+            const ipRes = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipRes.json();
+            console.log('[PaySprint Onboard] Server outgoing IP:', ipData.ip, '| Target URL:', onboardUrl);
+        } catch (_) {}
 
         const response = await fetch(onboardUrl, {
             method: 'POST',
@@ -43,20 +49,30 @@ router.post('/generate-url', async (req, res) => {
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
-        console.log('[PaySprint Onboarding URL] Response:', data);
+        const rawText = await response.text();
+        console.log('[PaySprint Onboarding URL] HTTP Status:', response.status, '| Raw Response:', rawText);
+
+        let data;
+        try { data = JSON.parse(rawText); } catch (_) { data = { status: false, message: rawText }; }
 
         if (data.status === true || data.response_code === 1) {
-            // URL is returned in data.message or data.url depending on response structure
             const redirectUrl = data.url || data.message;
             return res.status(200).json({
                 success: true,
                 onboardUrl: redirectUrl
             });
         } else {
-            return res.status(500).json({
+            // Surface PaySprint's exact error message (e.g. "Ip Not Whitelisted") to the frontend
+            const psMessage = data.message || 'Failed to generate Onboarding URL from PaySprint.';
+            const isIpError = psMessage.toLowerCase().includes('ip') || psMessage.toLowerCase().includes('whitelisted');
+            console.error('[PaySprint Onboard] FAILED -', psMessage, isIpError ? '=> IP WHITELIST ISSUE' : '');
+            return res.status(400).json({
                 success: false,
-                message: data.message || 'Failed to generate Onboarding URL from PaySprint.'
+                message: psMessage,
+                response_code: data.response_code,
+                hint: isIpError
+                    ? 'Your server IP is not whitelisted in the PaySprint panel. Whitelist the IP shown in the server log.'
+                    : undefined
             });
         }
     } catch (error) {
