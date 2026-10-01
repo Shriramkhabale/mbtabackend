@@ -33,7 +33,7 @@ router.post('/generate-url', async (req, res) => {
             is_new: '0',
             email: user.email || 'retailer@mbmitra.com',
             firm: user.shopName || user.name || 'MB Mitra Retailer',
-            callback: `https://admin.mbmitra.com/Callbacks/paysprintCommonCallback`
+            callback: `https://api.mbmitra.in/api/paysprint/onboard/callback`
         };
 
         // Log outgoing server IP for debugging whitelist issues
@@ -111,6 +111,29 @@ router.post('/callback', async (req, res) => {
 });
 
 /**
+ * @route POST /api/paysprint/onboard/transaction-callback
+ * @desc PaySprint mandatory transaction callback for onboarding charges
+ */
+router.post('/transaction-callback', async (req, res) => {
+    try {
+        console.log('[PaySprint Transaction Callback] Received:', req.body);
+        
+        // Return 200 OK to PaySprint as required by their documentation
+        res.status(200).json({
+            status: 200,
+            message: "Transaction completed successfully"
+        });
+    } catch (error) {
+        console.error('[PaySprint Transaction Callback Error]:', error);
+        res.status(400).json({
+            status: 400,
+            message: "Transaction failed"
+        });
+    }
+});
+
+
+/**
  * @route GET /api/paysprint/onboard/diagnose
  * @desc Diagnose PaySprint onboarding - shows actual outgoing VPS IP and tests the API
  */
@@ -149,7 +172,7 @@ router.get('/diagnose', async (req, res) => {
         is_new: '1',
         email: 'test@mbmitra.com',
         firm: 'Diagnose Test',
-        callback: 'https://admin.mbmitra.com/Callbacks/paysprintCommonCallback'
+        callback: 'https://api.mbmitra.in/api/paysprint/onboard/callback'
     };
 
     try {
