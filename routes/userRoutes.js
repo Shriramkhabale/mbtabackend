@@ -429,4 +429,34 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+/**
+ * PATCH /api/users/:userId/paysprint-onboard
+ * Admin: Manually mark a user as PaySprint onboarded (bypasses PaySprint Onboarding API)
+ * Use while waiting for PaySprint support to activate the Onboarding API
+ */
+router.patch('/:userId/paysprint-onboard', async (req, res) => {
+    const { onboarded } = req.body; // true or false
+    try {
+        const user = await User.findOne({
+            $or: [
+                { userId: { $regex: new RegExp('^' + req.params.userId + '$', 'i') } },
+                { _id: req.params.userId.match(/^[a-f\d]{24}$/i) ? req.params.userId : null }
+            ]
+        });
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        user.isPaySprintOnboarded = onboarded !== false; // defaults to true
+        await user.save();
+
+        console.log(`[Admin] User ${user.userId} isPaySprintOnboarded set to ${user.isPaySprintOnboarded}`);
+        res.json({
+            success: true,
+            message: `User ${user.userId} PaySprint status set to ${user.isPaySprintOnboarded ? 'ONBOARDED ✅' : 'NOT onboarded'}`,
+            user: { userId: user.userId, isPaySprintOnboarded: user.isPaySprintOnboarded }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 module.exports = router;
