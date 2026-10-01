@@ -84,29 +84,48 @@ router.post('/generate-url', async (req, res) => {
 /**
  * @route POST /api/paysprint/onboard/callback
  * @desc Webhook / Callback from PaySprint after onboarding is completed
+ *
+ * PaySprint sends this after merchant completes KYC on their page.
+ * Possible body fields (varies by PaySprint version):
+ *   - merchantcode: the merchant code we sent in the onboarding request
+ *   - status: "Active" | "Pending" | "Rejected"
+ *   - bank6_status: "Active" (specific to UPI Cashout / Bank 6)
+ *   - onboard_status: "Active"
+ *   - response_code: 1 (success)
  */
 router.post('/callback', async (req, res) => {
     try {
         const body = req.body || {};
-        console.log('[PaySprint Onboarding Callback] Received:', body);
+        console.log('[PaySprint Onboarding Callback] RAW body:', JSON.stringify(body));
 
-        // If the merchant is successfully onboarded, update their status in the DB
-        if (body.merchantcode && (body.status === 'Active' || body.bank6_status === 'Active')) {
+        const merchantCode = body.merchantcode || body.merchant_code || body.merchantCode;
+
+        // Accept multiple possible success status field names from PaySprint
+        const statusFields = [body.status, body.bank6_status, body.onboard_status, body.kyc_status];
+        const isActive = statusFields.some(s => s === 'Active' || s === 'active' || s === 'ACTIVE');
+        const isResponseSuccess = body.response_code === 1 || body.response_code === '1';
+
+        console.log(`[PaySprint Onboarding Callback] merchantCode=${merchantCode} isActive=${isActive} responseSuccess=${isResponseSuccess}`);
+
+        if (merchantCode && (isActive || isResponseSuccess)) {
             const user = await User.findOne({
-                $or: [{ retailerId: body.merchantcode }, { userId: body.merchantcode }]
+                $or: [{ retailerId: merchantCode }, { userId: merchantCode }]
             });
 
             if (user) {
                 user.isPaySprintOnboarded = true;
                 await user.save();
-                console.log(`[PaySprint Onboarding] User ${user.userId} successfully marked as onboarded.`);
+                console.log(`[PaySprint Onboarding Callback] ✅ User ${user.userId} marked as ONBOARDED`);
+            } else {
+                console.warn(`[PaySprint Onboarding Callback] ⚠️ No user found for merchantCode: ${merchantCode}`);
             }
         }
 
-        res.status(200).json({ status: 200, message: 'Webhook received' });
+        // Always return 200 so PaySprint doesn't retry
+        res.status(200).json({ status: 200, message: 'Callback received' });
     } catch (error) {
         console.error('[PaySprint Onboarding Callback Error]:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(200).json({ status: 200, message: 'Callback received with error' }); // still 200 to prevent retries
     }
 });
 
