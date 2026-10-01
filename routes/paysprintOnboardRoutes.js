@@ -43,6 +43,16 @@ router.post('/generate-url', async (req, res) => {
             console.log('[PaySprint Onboard] Server outgoing IP:', ipData.ip, '| Target URL:', onboardUrl);
         } catch (_) {}
 
+        console.log('\n================ PAYSPRINT KYC LOG ================');
+        console.log('1. Target URL:', onboardUrl);
+        console.log('2. Request Headers:', JSON.stringify({
+            'Authorisedkey': headers['Authorisedkey'],
+            'Token': headers['Token'] ? headers['Token'].substring(0,20) + '...' : 'MISSING'
+        }));
+        console.log('3. Request Payload Sent to PaySprint:', JSON.stringify(payload, null, 2));
+        console.log('4. Partner ID Extracted by Code:', getPartnerId());
+        console.log('===================================================\n');
+
         const response = await fetch(onboardUrl, {
             method: 'POST',
             headers,
@@ -50,7 +60,7 @@ router.post('/generate-url', async (req, res) => {
         });
 
         const rawText = await response.text();
-        console.log('[PaySprint Onboarding URL] HTTP Status:', response.status, '| Raw Response:', rawText);
+        console.log('[PaySprint Onboarding URL] HTTP Status:', response.status, '| Raw Response from PaySprint:', rawText);
 
         let data;
         try { data = JSON.parse(rawText); } catch (_) { data = { status: false, message: rawText }; }
