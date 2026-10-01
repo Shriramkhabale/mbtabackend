@@ -33,7 +33,7 @@ router.post('/generate-url', async (req, res) => {
             is_new: '0',
             email: user.email || 'retailer@mbmitra.com',
             firm: user.shopName || user.name || 'MB Mitra Retailer',
-            callback: `https://api.mbmitra.in/api/paysprint/onboard/callback`
+            callback: `https://admin.mbmitra.com/Callbacks/paysprintCommonCallback`
         };
 
         // Log outgoing server IP for debugging whitelist issues
@@ -172,7 +172,7 @@ router.get('/diagnose', async (req, res) => {
         is_new: '1',
         email: 'test@mbmitra.com',
         firm: 'Diagnose Test',
-        callback: 'https://api.mbmitra.in/api/paysprint/onboard/callback'
+        callback: 'https://admin.mbmitra.com/Callbacks/paysprintCommonCallback'
     };
 
     try {
