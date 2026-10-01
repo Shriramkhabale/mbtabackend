@@ -33,7 +33,7 @@ router.post('/generate-url', async (req, res) => {
             is_new: '0',
             email: user.email || 'retailer@mbmitra.com',
             firm: user.shopName || user.name || 'MB Mitra Retailer',
-            callback: `https://api.mbmitra.in/api/paysprint/onboard/callback`
+            callback: `https://admin.mbmitra.com/Callbacks/paysprintCommonCallback`
         };
 
         // Log outgoing server IP for debugging whitelist issues
@@ -84,48 +84,29 @@ router.post('/generate-url', async (req, res) => {
 /**
  * @route POST /api/paysprint/onboard/callback
  * @desc Webhook / Callback from PaySprint after onboarding is completed
- *
- * PaySprint sends this after merchant completes KYC on their page.
- * Possible body fields (varies by PaySprint version):
- *   - merchantcode: the merchant code we sent in the onboarding request
- *   - status: "Active" | "Pending" | "Rejected"
- *   - bank6_status: "Active" (specific to UPI Cashout / Bank 6)
- *   - onboard_status: "Active"
- *   - response_code: 1 (success)
  */
 router.post('/callback', async (req, res) => {
     try {
         const body = req.body || {};
-        console.log('[PaySprint Onboarding Callback] RAW body:', JSON.stringify(body));
+        console.log('[PaySprint Onboarding Callback] Received:', body);
 
-        const merchantCode = body.merchantcode || body.merchant_code || body.merchantCode;
-
-        // Accept multiple possible success status field names from PaySprint
-        const statusFields = [body.status, body.bank6_status, body.onboard_status, body.kyc_status];
-        const isActive = statusFields.some(s => s === 'Active' || s === 'active' || s === 'ACTIVE');
-        const isResponseSuccess = body.response_code === 1 || body.response_code === '1';
-
-        console.log(`[PaySprint Onboarding Callback] merchantCode=${merchantCode} isActive=${isActive} responseSuccess=${isResponseSuccess}`);
-
-        if (merchantCode && (isActive || isResponseSuccess)) {
+        // If the merchant is successfully onboarded, update their status in the DB
+        if (body.merchantcode && (body.status === 'Active' || body.bank6_status === 'Active')) {
             const user = await User.findOne({
-                $or: [{ retailerId: merchantCode }, { userId: merchantCode }]
+                $or: [{ retailerId: body.merchantcode }, { userId: body.merchantcode }]
             });
 
             if (user) {
                 user.isPaySprintOnboarded = true;
                 await user.save();
-                console.log(`[PaySprint Onboarding Callback] ✅ User ${user.userId} marked as ONBOARDED`);
-            } else {
-                console.warn(`[PaySprint Onboarding Callback] ⚠️ No user found for merchantCode: ${merchantCode}`);
+                console.log(`[PaySprint Onboarding] User ${user.userId} successfully marked as onboarded.`);
             }
         }
 
-        // Always return 200 so PaySprint doesn't retry
-        res.status(200).json({ status: 200, message: 'Callback received' });
+        res.status(200).json({ status: 200, message: 'Webhook received' });
     } catch (error) {
         console.error('[PaySprint Onboarding Callback Error]:', error);
-        res.status(200).json({ status: 200, message: 'Callback received with error' }); // still 200 to prevent retries
+        res.status(500).send('Internal Server Error');
     }
 });
 
@@ -168,7 +149,7 @@ router.get('/diagnose', async (req, res) => {
         is_new: '1',
         email: 'test@mbmitra.com',
         firm: 'Diagnose Test',
-        callback: 'https://api.mbmitra.in/api/paysprint/onboard/callback'
+        callback: 'https://admin.mbmitra.com/Callbacks/paysprintCommonCallback'
     };
 
     try {

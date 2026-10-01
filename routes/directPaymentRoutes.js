@@ -420,7 +420,7 @@ router.get('/debug-paysprint', async (req, res) => {
             is_new: '1',
             email: 'test@mbmitra.com',
             firm: 'Debug Test',
-            callback: 'https://api.mbmitra.in/api/paysprint/onboard/callback'
+            callback: 'https://admin.mbmitra.com/Callbacks/paysprintCommonCallback'
         };
 
         results.qrTests = [];
