@@ -12,23 +12,13 @@ const base64url = (str) => {
  * Extract partnerId from environment or decoded JWT_KEY
  */
 const getPartnerId = () => {
-    let partnerId = 'PS0033714';
-    const jwtKey = process.env.JWT_KEY;
-    if (jwtKey) {
-        try {
-            const decoded = Buffer.from(jwtKey, 'base64').toString('utf8');
-            if (decoded && decoded.startsWith('PS')) {
-                // Partner ID is typically PS followed by 7 digits.
-                const match = decoded.match(/^(PS\d{7})/);
-                if (match) {
-                    partnerId = match[1];
-                }
-            }
-        } catch (e) {
-            // Ignore decode errors
-        }
+    // Check if it's explicitly set in .env
+    if (process.env.PAYSPRINT_PARTNER_ID) {
+        return process.env.PAYSPRINT_PARTNER_ID;
     }
-    return partnerId;
+    
+    // Otherwise fallback to the user's correct Partner ID
+    return 'PS003371';
 };
 
 /**
