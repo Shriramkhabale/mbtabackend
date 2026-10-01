@@ -110,4 +110,62 @@ router.post('/callback', async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/paysprint/onboard/diagnose
+ * @desc Diagnose PaySprint onboarding - shows actual outgoing VPS IP and tests the API
+ */
+router.get('/diagnose', async (req, res) => {
+    const result = {};
+
+    // Step 1: Capture actual outgoing IP from VPS
+    try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        result.vpsOutgoingIp = (await ipRes.json()).ip;
+    } catch (e) {
+        result.vpsOutgoingIp = 'FETCH_FAILED: ' + e.message;
+    }
+
+    // Step 2: Try alternate IP services in case ipify is blocked
+    try {
+        const ipRes2 = await fetch('https://checkip.amazonaws.com/');
+        result.vpsOutgoingIp_aws = (await ipRes2.text()).trim();
+    } catch (e) {
+        result.vpsOutgoingIp_aws = 'FETCH_FAILED';
+    }
+
+    // Step 3: Build headers using fixed getHeaders
+    const partnerId = getPartnerId();
+    const baseUrl = getBaseUrl();
+    const headers = getHeaders('ONBOARDING');
+    result.authorisedKeySent = headers['Authorisedkey'];
+    result.tokenPreview = headers['Token'] ? headers['Token'].substring(0, 50) + '...' : 'MISSING';
+    result.partnerId = partnerId;
+    result.baseUrl = baseUrl;
+
+    // Step 4: Call PaySprint getonboardurl
+    const payload = {
+        merchantcode: partnerId,
+        mobile: '9999999999',
+        is_new: '1',
+        email: 'test@mbmitra.com',
+        firm: 'Diagnose Test',
+        callback: 'https://api.mbmitra.in/api/paysprint/onboard/callback'
+    };
+
+    try {
+        const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+        });
+        const text = await psRes.text();
+        try { result.paysprintResponse = JSON.parse(text); } catch (_) { result.paysprintResponse = text; }
+        result.httpStatus = psRes.status;
+    } catch (e) {
+        result.paysprintError = e.message;
+    }
+
+    res.json(result);
+});
+
 module.exports = router;
