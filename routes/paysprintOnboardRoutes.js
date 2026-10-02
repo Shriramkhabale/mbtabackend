@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { getPartnerId, getBaseUrl, getHeaders } = require('../utils/paysprint');
+const { getPartnerId, getBaseUrl, getHeaders, decryptPayload } = require('../utils/paysprint');
 
 /**
  * @route POST /api/paysprint/onboard/generate-url
@@ -27,8 +27,11 @@ router.post('/generate-url', async (req, res) => {
         const onboardUrl = `${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`;
         const headers = getHeaders('ONBOARDING');
 
+        // Ensure merchantcode does not contain special characters
+        const cleanMerchantCode = (user.retailerId || user.userId).toString().replace(/[^a-zA-Z0-9]/g, '').substring(0, 50);
+
         const payload = {
-            merchantcode: user.retailerId || user.userId,
+            merchantcode: cleanMerchantCode,
             mobile: user.mobile || '9999999999',
             is_new: '0',
             email: user.email || 'retailer@mbmitra.com',
@@ -98,18 +101,38 @@ router.post('/generate-url', async (req, res) => {
 router.post('/callback', async (req, res) => {
     try {
         const body = req.body || {};
-        console.log('[PaySprint Onboarding Callback] Received:', body);
+        let decryptedData = null;
 
-        // If the merchant is successfully onboarded, update their status in the DB
-        if (body.merchantcode && (body.status === 'Active' || body.bank6_status === 'Active')) {
-            const user = await User.findOne({
-                $or: [{ retailerId: body.merchantcode }, { userId: body.merchantcode }]
-            });
+        // PaySprint sends encrypted data in 'data' query param or 'param_enc' in body
+        if (req.query.data) {
+            decryptedData = decryptPayload(req.query.data);
+        } else if (body.param_enc) {
+            decryptedData = decryptPayload(body.param_enc);
+        } else if (body.merchantcode || body.param) {
+            // Fallback for unencrypted callbacks (if any)
+            decryptedData = body.param || body;
+        }
 
-            if (user) {
-                user.isPaySprintOnboarded = true;
-                await user.save();
-                console.log(`[PaySprint Onboarding] User ${user.userId} successfully marked as onboarded.`);
+        console.log('[PaySprint Onboarding Callback] Decrypted Data:', decryptedData);
+
+        if (decryptedData) {
+            const merchantCode = decryptedData.merchantcode;
+            const status = decryptedData.status;
+            // Check nested bank status based on PaySprint docs
+            const bank6Status = decryptedData.bank?.Bank6 || decryptedData.bank6_status;
+
+            if (merchantCode && (status === '1' || status === 'Active' || status === 'Success' || bank6Status === 'Active' || bank6Status === '1')) {
+                const user = await User.findOne({
+                    $or: [{ retailerId: merchantCode }, { userId: merchantCode }]
+                });
+
+                if (user) {
+                    user.isPaySprintOnboarded = true;
+                    await user.save();
+                    console.log(`[PaySprint Onboarding] User ${user.userId} successfully marked as onboarded.`);
+                } else {
+                    console.log(`[PaySprint Onboarding] User with merchantCode ${merchantCode} not found.`);
+                }
             }
         }
 
