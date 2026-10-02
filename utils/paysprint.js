@@ -9,16 +9,23 @@ const base64url = (str) => {
 };
 
 /**
- * Extract partnerId from environment or decoded JWT_KEY
+ * Extract partnerId from JWT_KEY (first ~8 chars of decoded key = "PS######")
+ * This auto-detects UAT (PS001217) vs LIVE (PS003371) from the key itself.
  */
 const getPartnerId = () => {
-    // Check if it's explicitly set in .env
     if (process.env.PAYSPRINT_PARTNER_ID) {
         return process.env.PAYSPRINT_PARTNER_ID;
     }
-    
-    // Otherwise fallback to the user's correct Partner ID
-    return 'PS003371';
+    // Auto-extract from JWT_KEY: decoded value starts with the Partner ID e.g. "PS001217..."
+    const jwtKeyRaw = process.env.JWT_KEY;
+    if (jwtKeyRaw) {
+        try {
+            const decoded = Buffer.from(jwtKeyRaw, 'base64').toString('utf8');
+            const match = decoded.match(/^(PS\d+)/);
+            if (match) return match[1];
+        } catch (_) {}
+    }
+    return 'PS003371'; // fallback for LIVE
 };
 
 /**
