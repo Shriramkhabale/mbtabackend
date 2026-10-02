@@ -23,10 +23,11 @@ const getPartnerId = () => {
 
 /**
  * Get Base URL based on Environment
+ * Note: PaySprint uses the same api.paysprint.in domain for both UAT and LIVE.
+ * The environment only affects which credentials (JWT_KEY, AUTHORISED_KEY) are used.
  */
 const getBaseUrl = () => {
-    const env = (process.env.ENVIRONMENT || 'LIVE').toUpperCase();
-    return env === 'LIVE' ? 'https://api.paysprint.in' : 'https://uat.paysprint.in';
+    return 'https://api.paysprint.in';
 };
 
 /**
