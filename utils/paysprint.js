@@ -21,7 +21,7 @@ const getPartnerId = () => {
     if (jwtKeyRaw) {
         try {
             const decoded = Buffer.from(jwtKeyRaw, 'base64').toString('utf8');
-            const match = decoded.match(/^(PS\d+)/);
+            const match = decoded.match(/^(PS\d{6})/);
             if (match) return match[1];
         } catch (_) {}
     }
