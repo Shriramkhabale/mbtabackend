@@ -29,12 +29,32 @@ const getPartnerId = () => {
 };
 
 /**
- * Get Base URL based on Environment
- * Note: PaySprint uses the same api.paysprint.in domain for both UAT and LIVE.
- * The environment only affects which credentials (JWT_KEY, AUTHORISED_KEY) are used.
+ * Get Base URL based on Environment.
+ * UAT  => https://sit.paysprint.in
+ * LIVE => https://api.paysprint.in
+ * Set PAYSPRINT_ENV=UAT in .env to use the UAT environment.
  */
+const isUat = () => {
+    // Check PAYSPRINT_ENV first, then fall back to ENVIRONMENT (already confirmed in server .env)
+    const env = process.env.PAYSPRINT_ENV || process.env.ENVIRONMENT || 'LIVE';
+    return env.toUpperCase() === 'UAT';
+};
+
 const getBaseUrl = () => {
-    return 'https://api.paysprint.in';
+    return isUat()
+        ? 'https://sit.paysprint.in'
+        : 'https://api.paysprint.in';
+};
+
+/**
+ * Returns the full AEPS Merchant Onboarding URL.
+ * UAT  => https://sit.paysprint.in/service-api/api/v1/service/onboard/onboardnew/getonboardurl
+ * LIVE => https://api.paysprint.in/api/v1/service/onboard/onboard/getonboardurl
+ */
+const getOnboardUrl = () => {
+    return isUat()
+        ? `${getBaseUrl()}/service-api/api/v1/service/onboard/onboardnew/getonboardurl`
+        : `${getBaseUrl()}/api/v1/service/onboard/onboard/getonboardurl`;
 };
 
 /**
@@ -143,6 +163,7 @@ const decryptPayload = (encData) => {
 module.exports = {
     getPartnerId,
     getBaseUrl,
+    getOnboardUrl,
     generateToken,
     getHeaders,
     encryptPayload,

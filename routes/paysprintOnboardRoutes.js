@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { getPartnerId, getBaseUrl, getHeaders, decryptPayload } = require('../utils/paysprint');
+const { getPartnerId, getBaseUrl, getOnboardUrl, getHeaders, decryptPayload } = require('../utils/paysprint');
 
 /**
  * @route POST /api/paysprint/onboard/generate-url
@@ -23,8 +23,7 @@ router.post('/generate-url', async (req, res) => {
             return res.status(200).json({ success: true, message: 'User is already onboarded.' });
         }
 
-        const baseUrl = getBaseUrl();
-        const onboardUrl = `${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`;
+        const onboardUrl = getOnboardUrl();
         const headers = getHeaders('ONBOARDING');
 
         // Ensure merchantcode does not contain special characters
@@ -197,6 +196,13 @@ router.get('/diagnose', async (req, res) => {
     result.tokenPreview = headers['Token'] ? headers['Token'].substring(0, 50) + '...' : 'MISSING';
     result.partnerId = partnerId;
     result.baseUrl = baseUrl;
+    result.onboardUrl = require('../utils/paysprint').getOnboardUrl();
+    // Debug: show what env vars the server actually sees
+    result.env_debug = {
+        PAYSPRINT_ENV: process.env.PAYSPRINT_ENV || '(not set)',
+        ENVIRONMENT: process.env.ENVIRONMENT || '(not set)',
+        isUAT: baseUrl.includes('sit.paysprint')
+    };
 
     // Step 4: Call PaySprint getonboardurl
     const payload = {
@@ -209,7 +215,7 @@ router.get('/diagnose', async (req, res) => {
     };
 
     try {
-        const psRes = await fetch(`${baseUrl}/api/v1/service/onboard/onboard/getonboardurl`, {
+        const psRes = await fetch(getOnboardUrl(), {
             method: 'POST',
             headers,
             body: JSON.stringify(payload)
