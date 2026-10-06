@@ -64,24 +64,24 @@ const generateToken = (product = 'WALLET') => {
     const jwtKeyRaw = process.env.JWT_KEY || 'UFMwMDMzNzE0ZGU5MzU0NDIzNGFkZmZiYjY4MWVkNjBmZmNmYjk0MQ==';
     const partnerId = getPartnerId();
 
-    // PaySprint JWT_KEY is base64-encoded — decode it to raw bytes for HMAC signing
-    const jwtKeyBytes = Buffer.from(jwtKeyRaw, 'base64');
+    // PaySprint expects the raw JWT_KEY string (as UTF-8 bytes) as the HMAC secret — do NOT base64-decode it
+    const timestamp = Math.floor(Date.now() / 1000);
 
     const header = { typ: 'JWT', alg: 'HS256' };
     const payload = {
         iss: 'PAYSPRINT',
-        timestamp: Math.floor(Date.now() / 1000),
+        timestamp: timestamp,
         partnerId: partnerId,
         product: product,
-        reqid: String(Math.floor(100000 + Math.random() * 900000))
+        reqid: timestamp  // Must be a number matching timestamp, per PaySprint docs
     };
 
     const headerB64 = base64url(Buffer.from(JSON.stringify(header)));
     const payloadB64 = base64url(Buffer.from(JSON.stringify(payload)));
     const signatureInput = `${headerB64}.${payloadB64}`;
 
-    // Use the decoded bytes as the HMAC secret (not the raw base64 string)
-    const signature = crypto.createHmac('sha256', jwtKeyBytes)
+    // Sign with raw JWT_KEY as UTF-8 string (NOT decoded bytes)
+    const signature = crypto.createHmac('sha256', jwtKeyRaw)
         .update(signatureInput)
         .digest();
     const signatureB64 = base64url(signature);
