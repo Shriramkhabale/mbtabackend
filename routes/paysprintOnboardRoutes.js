@@ -68,7 +68,7 @@ router.post('/generate-url', async (req, res) => {
         try { data = JSON.parse(rawText); } catch (_) { data = { status: false, message: rawText }; }
 
         if (data.status === true || data.response_code === 1) {
-            const redirectUrl = data.url || data.message;
+            const redirectUrl = data.redirecturl || data.url || data.onboardUrl;
             return res.status(200).json({
                 success: true,
                 onboardUrl: redirectUrl
