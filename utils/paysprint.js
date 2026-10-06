@@ -97,8 +97,8 @@ const getHeaders = (product = 'WALLET') => {
     const authKeyRaw = process.env.AUTHORISED_KEY || '';
     const partnerId = getPartnerId();
 
-    // PaySprint AUTHORISED_KEY is base64-encoded — send the decoded hex string
-    const authKey = authKeyRaw ? Buffer.from(authKeyRaw, 'base64').toString('utf8') : '';
+    // PaySprint expects the raw AUTHORISED_KEY string exactly as shown in the portal (do NOT decode)
+    const authKey = authKeyRaw || '';
 
     const headers = {
         'Token': token,
