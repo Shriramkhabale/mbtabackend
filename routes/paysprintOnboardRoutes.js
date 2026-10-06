@@ -94,10 +94,56 @@ router.post('/generate-url', async (req, res) => {
 });
 
 /**
+ * @route GET /api/paysprint/onboard/callback
+ * @desc Browser redirect from PaySprint after merchant completes KYC onboarding
+ * PaySprint redirects the merchant's browser here via GET with ?data=encrypted_data
+ */
+router.get('/callback', async (req, res) => {
+    try {
+        const encryptedData = req.query.data;
+        let decryptedData = null;
+        let onboardingStatus = 'unknown';
+
+        if (encryptedData) {
+            decryptedData = decryptPayload(encryptedData);
+            console.log('[PaySprint Onboarding GET Callback] Decrypted Data:', decryptedData);
+        }
+
+        if (decryptedData) {
+            const merchantCode = decryptedData.merchantcode;
+            const status = decryptedData.status;
+
+            if (merchantCode && (status === '1' || status === 1 || status === 'Active' || status === 'Success')) {
+                onboardingStatus = 'success';
+                const user = await User.findOne({
+                    $or: [{ retailerId: merchantCode }, { userId: merchantCode }]
+                });
+                if (user) {
+                    user.isPaySprintOnboarded = true;
+                    await user.save();
+                    console.log(`[PaySprint Onboarding] User ${user.userId} marked as onboarded via GET callback.`);
+                }
+            } else {
+                onboardingStatus = 'pending';
+            }
+        }
+
+        // Redirect merchant back to your frontend with status
+        const frontendUrl = `https://one.mbmitra.in/wallet?kyc=${onboardingStatus}`;
+        return res.redirect(frontendUrl);
+
+    } catch (error) {
+        console.error('[PaySprint Onboarding GET Callback Error]:', error);
+        return res.redirect('https://one.mbmitra.in/wallet?kyc=error');
+    }
+});
+
+/**
  * @route POST /api/paysprint/onboard/callback
- * @desc Webhook / Callback from PaySprint after onboarding is completed
+ * @desc Webhook / Callback from PaySprint after onboarding is completed (server-to-server)
  */
 router.post('/callback', async (req, res) => {
+
     try {
         const body = req.body || {};
         let decryptedData = null;
