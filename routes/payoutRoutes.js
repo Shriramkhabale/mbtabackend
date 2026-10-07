@@ -91,7 +91,11 @@ router.post('/beneficiary/list', async (req, res) => {
         const headers = getHeaders('PAYOUT');
 
         try {
-            const psRes = await fetch(`${baseUrl}/api/v1/service/payout/payout/list`, {
+            const endpoint = baseUrl.includes('sit') || baseUrl.includes('uat') 
+                ? '/service-api/api/v1/service/payout/payout/list'
+                : '/api/v1/service/payout/payout/list';
+
+            const psRes = await fetch(`${baseUrl}${endpoint}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ merchantid: targetMerchantCode })
@@ -187,7 +191,11 @@ router.post('/beneficiary/add', async (req, res) => {
         let apiMessage = 'Beneficiary added successfully';
 
         try {
-            const psRes = await fetch(`${baseUrl}/api/v1/service/payout/payout/add`, {
+            const endpoint = baseUrl.includes('sit') || baseUrl.includes('uat') 
+                ? '/service-api/api/v1/service/payout/payout/add'
+                : '/api/v1/service/payout/payout/add';
+
+            const psRes = await fetch(`${baseUrl}${endpoint}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(requestPayload)
@@ -317,7 +325,11 @@ router.post('/transfer', async (req, res) => {
         let statusMessage = '';
 
         try {
-            const psRes = await fetch(`${baseUrl}/api/v1/service/payout/payout/dotransaction`, {
+            const endpoint = baseUrl.includes('sit') || baseUrl.includes('uat') 
+                ? '/service-api/api/v1/service/payout/payout/dotransaction'
+                : '/api/v1/service/payout/payout/dotransaction';
+
+            const psRes = await fetch(`${baseUrl}${endpoint}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(payoutPayload)
@@ -426,7 +438,11 @@ router.post('/status', async (req, res) => {
         const baseUrl = getBaseUrl();
         const headers = getHeaders('PAYOUT');
 
-        const psRes = await fetch(`${baseUrl}/api/v1/service/payout/payout/status`, {
+        const endpoint = baseUrl.includes('sit') || baseUrl.includes('uat') 
+            ? '/service-api/api/v1/service/payout/payout/status'
+            : '/api/v1/service/payout/payout/status';
+
+        const psRes = await fetch(`${baseUrl}${endpoint}`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ refid: refid || tx?.referenceNumber, ackno: ackno || tx?.paysprintTxnId })
@@ -468,6 +484,23 @@ const handlePayoutCallback = async (req, res) => {
         if (decrypted) payload = { ...payload, ...decrypted };
     }
 
+    if (payload.event === 'PAYOUT_SETTLEMENT' || payload.param_inc) {
+        if (payload.param_inc && typeof payload.param_inc === 'string') {
+            try {
+                const base64Url = payload.param_inc.split('.')[1];
+                if (base64Url) {
+                    const decodedStr = Buffer.from(base64Url, 'base64').toString('utf8');
+                    const paramIncDecoded = JSON.parse(decodedStr);
+                    payload = { ...payload, ...paramIncDecoded };
+                }
+            } catch (e) {
+                console.error('[Payout Callback] Error decoding param_inc:', e.message);
+            }
+        } else if (payload.param) {
+            payload = { ...payload, ...payload.param };
+        }
+    }
+
     console.log('[PaySprint Payout Callback] Received:', payload);
 
     const refId = payload.refid || payload.txnid || payload.referenceid;
@@ -475,7 +508,7 @@ const handlePayoutCallback = async (req, res) => {
     const statusVal = payload.status !== undefined ? payload.status : payload.txn_status;
 
     if (!refId && !ackno) {
-        return res.status(400).json({ status: 'failed', message: 'Missing reference ID' });
+        return res.status(400).json({ status: 400, message: 'Transaction failed' });
     }
 
     try {
@@ -484,7 +517,7 @@ const handlePayoutCallback = async (req, res) => {
         });
 
         if (!tx) {
-            return res.status(404).json({ status: 'failed', message: 'Transaction not found' });
+            return res.status(400).json({ status: 400, message: 'Transaction failed' });
         }
 
         const isSuccess = statusVal === 1 || statusVal === '1' || statusVal === true || String(statusVal).toUpperCase() === 'SUCCESS';
@@ -508,10 +541,10 @@ const handlePayoutCallback = async (req, res) => {
             await tx.save();
         }
 
-        res.json({ status: 'success', message: 'Payout callback processed' });
+        res.json({ status: 200, message: 'Transaction completed successfully' });
     } catch (err) {
         console.error('[Payout Callback Error]:', err);
-        res.status(500).json({ status: 'error', message: err.message });
+        res.status(400).json({ status: 400, message: 'Transaction failed' });
     }
 };
 
