@@ -1,28 +1,66 @@
 const express = require('express');
 const router = express.Router();
 const Staff = require('../models/Staff');
+const { Counter, getNextEmployeeUid, getNextEmployeeUidWithSeq, rollbackEmployeeUid } = require('../models/Counter');
 
-// Staff Login
+// GET next available Employee UID
+router.get('/next-uid', async (req, res) => {
+    try {
+        const staffWithUids = await Staff.find({ username: /^MBTAE\d+$/i }).select('username');
+        let maxStaffSeq = 10100;
+        for (const s of staffWithUids) {
+            const match = s.username.match(/^MBTAE0*(\d+)$/i);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num > maxStaffSeq) {
+                    maxStaffSeq = num;
+                }
+            }
+        }
+        const nextNum = maxStaffSeq + 1;
+        const nextUid = `MBTAE${String(nextNum).padStart(9, '0')}`;
+        res.status(200).json({ success: true, nextUid });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Staff Login (supports Username / UID, Email, or Mobile)
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({ success: false, message: 'Username and password are required' });
+        const queryTerm = (username || '').trim();
+        const cleanPass = (password || '').trim();
+
+        if (!queryTerm || !cleanPass) {
+            return res.status(400).json({ success: false, message: 'Email / Username and password are required' });
         }
 
-        const cleanUser = username.trim().toLowerCase();
-        const staff = await Staff.findOne({ username: cleanUser });
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { username: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { email: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const staff = await Staff.findOne({ $or: orConditions });
 
         if (!staff) {
-            return res.status(401).json({ success: false, message: 'Invalid Staff Username or Password' });
+            return res.status(401).json({ success: false, message: 'Invalid Staff Email, Username or Password' });
         }
 
         if (staff.isActive === false) {
             return res.status(403).json({ success: false, message: 'Staff account is deactivated. Contact Admin.' });
         }
 
-        if (staff.password !== password) {
-            return res.status(401).json({ success: false, message: 'Invalid Staff Username or Password' });
+        if (staff.password !== cleanPass) {
+            return res.status(401).json({ success: false, message: 'Invalid Staff Email, Username or Password' });
         }
 
         res.json({
@@ -47,8 +85,21 @@ router.post('/login', async (req, res) => {
 // GET staff member profile & live permissions (for active session sync)
 router.get('/profile/:username', async (req, res) => {
     try {
-        const cleanUser = String(req.params.username).trim().toLowerCase();
-        const staff = await Staff.findOne({ username: cleanUser });
+        const queryTerm = String(req.params.username || '').trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { username: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { email: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const staff = await Staff.findOne({ $or: orConditions });
         if (!staff) {
             return res.status(404).json({ success: false, message: 'Staff member not found' });
         }
@@ -81,18 +132,21 @@ router.get('/', async (req, res) => {
 
 // POST create new staff member
 router.post('/', async (req, res) => {
+    let allocatedSeq = null;
     try {
         const { name, username, password, email, mobile, permissions, isActive } = req.body;
 
-        if (!name || !username || !password) {
-            return res.status(400).json({ success: false, message: 'Name, Username, and Password are required' });
+        const cleanName = String(name || '').trim();
+        const cleanPassword = String(password || '').trim();
+
+        if (!cleanName || !cleanPassword) {
+            return res.status(400).json({ success: false, message: 'Name and Password are required' });
         }
 
-        const cleanUser = String(username).trim().toLowerCase();
-        const existing = await Staff.findOne({ username: cleanUser });
-        if (existing) {
-            return res.status(400).json({ success: false, message: 'Staff username already exists. Choose a different one.' });
-        }
+        // Auto-generate sequential Employee UID (starts at MBTAE000010101 in ALL CAPITAL LETTERS)
+        const counterRes = await getNextEmployeeUidWithSeq(10101);
+        let cleanUser = counterRes.uid.toUpperCase();
+        allocatedSeq = counterRes.seq;
 
         const newStaff = new Staff({
             name: String(name).trim(),
@@ -105,8 +159,16 @@ router.post('/', async (req, res) => {
         });
 
         const saved = await newStaff.save();
-        res.status(201).json({ success: true, staff: saved, message: 'Staff member created successfully' });
+        allocatedSeq = null; // Successfully saved, do not rollback!
+        res.status(201).json({ 
+            success: true, 
+            staff: saved, 
+            message: `Staff member created successfully with UID ${cleanUser}` 
+        });
     } catch (error) {
+        if (allocatedSeq) {
+            await rollbackEmployeeUid(allocatedSeq);
+        }
         console.error('Create Staff Error:', error);
         if (error.code === 11000) {
             return res.status(400).json({ success: false, message: 'Staff username already exists. Choose a different one.' });
@@ -127,13 +189,18 @@ router.put('/:id', async (req, res) => {
 
         if (name) staff.name = String(name).trim();
         if (username) {
-            const cleanUser = String(username).trim().toLowerCase();
-            if (cleanUser !== staff.username) {
-                const existing = await Staff.findOne({ username: cleanUser });
+            const cleanUser = String(username).trim();
+            const finalUsername = cleanUser.toUpperCase();
+            if (finalUsername !== staff.username) {
+                const escapedUser = finalUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const existing = await Staff.findOne({ 
+                    _id: { $ne: staff._id },
+                    username: { $regex: new RegExp(`^${escapedUser}$`, 'i') } 
+                });
                 if (existing) {
                     return res.status(400).json({ success: false, message: 'Staff username already in use by another account' });
                 }
-                staff.username = cleanUser;
+                staff.username = finalUsername;
             }
         }
         if (password && String(password).trim()) staff.password = String(password).trim();
@@ -160,6 +227,21 @@ router.delete('/:id', async (req, res) => {
         if (!staff) {
             return res.status(404).json({ success: false, message: 'Staff member not found' });
         }
+
+        // If an employee with auto-generated UID was deleted, synchronize counter with remaining staff
+        if (staff.username && /^MBTAE\d+$/i.test(staff.username)) {
+            const remaining = await Staff.find({ username: /^MBTAE\d+$/i }).select('username');
+            let maxSeq = 10100;
+            for (const s of remaining) {
+                const match = s.username.match(/^MBTAE0*(\d+)$/i);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxSeq) maxSeq = num;
+                }
+            }
+            await Counter.findByIdAndUpdate('employee_uid', { seq: maxSeq }, { upsert: true });
+        }
+
         res.json({ success: true, message: 'Staff member deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PaymentRequisition = require('../models/PaymentRequisition');
+const User = require('../models/User');
 
 // GET all requisitions (for Admin Panel)
 router.get('/', async (req, res) => {
@@ -15,8 +16,30 @@ router.get('/', async (req, res) => {
 // GET requisitions for a specific user
 router.get('/user/:userId', async (req, res) => {
     try {
+        const queryTerm = (req.params.userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
+        const targetIds = [queryTerm];
+        if (user) {
+            if (user.userId && !targetIds.includes(user.userId)) targetIds.push(user.userId);
+            if (user.retailerId && !targetIds.includes(user.retailerId)) targetIds.push(user.retailerId);
+            if (user.mobile && !targetIds.includes(user.mobile)) targetIds.push(user.mobile);
+        }
+
         const requisitions = await PaymentRequisition.find({ 
-            userId: { $regex: new RegExp(`^${req.params.userId}$`, 'i') } 
+            userId: { $in: targetIds.map(id => new RegExp(`^${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) } 
         }).sort({ createdAt: -1 });
         res.json(requisitions);
     } catch (error) {
@@ -27,7 +50,24 @@ router.get('/user/:userId', async (req, res) => {
 // POST a new requisition (from Dashboard)
 router.post('/', async (req, res) => {
     try {
-        const newReq = new PaymentRequisition(req.body);
+        let reqData = { ...req.body };
+        if (reqData.userId) {
+            const queryTerm = (reqData.userId || '').toString().trim();
+            const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+            const orConditions = [
+                { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+                { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+                { mobile: queryTerm }
+            ];
+            if (cleanMobile && cleanMobile !== queryTerm) orConditions.push({ mobile: cleanMobile });
+            const user = await User.findOne({ $or: orConditions });
+            if (user && user.userId) {
+                reqData.userId = user.userId;
+            }
+        }
+        const newReq = new PaymentRequisition(reqData);
         await newReq.save();
         res.status(201).json(newReq);
     } catch (error) {

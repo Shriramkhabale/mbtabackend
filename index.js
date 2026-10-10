@@ -30,6 +30,8 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const staffRoutes = require('./routes/staffRoutes');
 const siteSettingsRoutes = require('./routes/siteSettingsRoutes');
 const paysprintOnboardRoutes = require('./routes/paysprintOnboardRoutes');
+const quickLinkRoutes = require('./routes/quickLinkRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const path = require('path');
 
 // Middleware
@@ -57,6 +59,8 @@ app.use('/api/notifications', notificationRoutes);
     app.use('/api/staff', staffRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/paysprint/onboard', paysprintOnboardRoutes);
+app.use('/api/quick-links', quickLinkRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Direct PaySprint Live Webhook Callback Endpoint
 const { handlePaySprintCallback } = require('./routes/directPaymentRoutes');

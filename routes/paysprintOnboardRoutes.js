@@ -14,7 +14,21 @@ router.post('/generate-url', async (req, res) => {
             return res.status(400).json({ success: false, message: 'User ID is required' });
         }
 
-        const user = await User.findOne({ userId });
+        const queryTerm = (userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -22,6 +36,15 @@ router.post('/generate-url', async (req, res) => {
         if (user.isPaySprintOnboarded) {
             return res.status(200).json({ success: true, message: 'User is already onboarded.' });
         }
+
+        // Save client origin so callback redirects back to retailer's actual environment (e.g. localhost or live)
+        try {
+            const rawOrigin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+            if (rawOrigin) {
+                user.onboardOrigin = rawOrigin;
+                await user.save();
+            }
+        } catch (_) {}
 
         const onboardUrl = getOnboardUrl();
         const headers = getHeaders('ONBOARDING');
@@ -100,41 +123,49 @@ router.post('/generate-url', async (req, res) => {
  */
 router.get('/callback', async (req, res) => {
     try {
-        const encryptedData = req.query.data;
+        const encryptedData = req.query.data || req.query.param_enc;
         let decryptedData = null;
         let onboardingStatus = 'unknown';
 
         if (encryptedData) {
             decryptedData = decryptPayload(encryptedData);
             console.log('[PaySprint Onboarding GET Callback] Decrypted Data:', decryptedData);
+        } else if (req.query.merchantcode || req.query.param) {
+            decryptedData = req.query.param || req.query;
         }
 
-        if (decryptedData) {
-            const merchantCode = decryptedData.merchantcode;
-            const status = decryptedData.status;
+        let user = null;
+        const merchantCode = decryptedData?.merchantcode || req.query.merchantcode;
+        const status = decryptedData?.status || req.query.status;
 
-            if (merchantCode && (status === '1' || status === 1 || status === 'Active' || status === 'Success')) {
-                onboardingStatus = 'success';
-                const user = await User.findOne({
-                    $or: [{ retailerId: merchantCode }, { userId: merchantCode }]
-                });
-                if (user) {
-                    user.isPaySprintOnboarded = true;
-                    await user.save();
-                    console.log(`[PaySprint Onboarding] User ${user.userId} marked as onboarded via GET callback.`);
-                }
-            } else {
-                onboardingStatus = 'pending';
-            }
+        if (merchantCode) {
+            user = await User.findOne({
+                $or: [{ retailerId: merchantCode }, { userId: merchantCode }]
+            });
         }
 
-        // Redirect merchant back to your frontend with status
-        const frontendUrl = `https://one.mbmitra.in/wallet?kyc=${onboardingStatus}`;
+        if (!user && (decryptedData?.mobile || req.query.mobile)) {
+            user = await User.findOne({ mobile: decryptedData?.mobile || req.query.mobile });
+        }
+
+        if (user) {
+            user.isPaySprintOnboarded = true;
+            await user.save();
+            onboardingStatus = 'success';
+            console.log(`[PaySprint Onboarding] User ${user.userId} marked as onboarded via GET callback.`);
+        } else if (status === '1' || status === 1 || status === 'Active' || status === 'Success') {
+            onboardingStatus = 'success';
+        }
+
+        // Redirect merchant back to their originating session (e.g. localhost:3000 or production)
+        const targetOrigin = user?.onboardOrigin || process.env.FRONTEND_URL || 'https://one.mbmitra.in';
+        const frontendUrl = `${targetOrigin}/wallet?kyc=${onboardingStatus}`;
         return res.redirect(frontendUrl);
 
     } catch (error) {
         console.error('[PaySprint Onboarding GET Callback Error]:', error);
-        return res.redirect('https://one.mbmitra.in/wallet?kyc=error');
+        const fallbackOrigin = process.env.FRONTEND_URL || 'https://one.mbmitra.in';
+        return res.redirect(`${fallbackOrigin}/wallet?kyc=error`);
     }
 });
 

@@ -268,7 +268,21 @@ router.post('/transfer', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ userId: { $regex: new RegExp(`^${userId}$`, 'i') } });
+        const queryTerm = (userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) {
             return res.status(404).json({ success: false, message: `User '${userId}' not found.` });
         }

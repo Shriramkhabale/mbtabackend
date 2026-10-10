@@ -107,7 +107,21 @@ router.post('/initiate', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ userId: { $regex: new RegExp(`^${userId}$`, 'i') } });
+        const queryTerm = (userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) {
             return res.status(404).json({ success: false, message: `User '${userId}' not found.` });
         }
@@ -478,9 +492,21 @@ router.get('/debug-paysprint', async (req, res) => {
 // Balance query helper
 router.get('/balance/:userId', async (req, res) => {
     try {
-        const user = await User.findOne({
-            userId: { $regex: new RegExp(`^${req.params.userId}$`, 'i') }
-        });
+        const queryTerm = (req.params.userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.json({ walletBalance: user.walletBalance });
     } catch (error) {

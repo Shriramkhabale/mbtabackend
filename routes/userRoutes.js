@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { Counter, getNextRetailerUid, getNextRetailerUidWithSeq, rollbackRetailerUid } = require('../models/Counter');
 
 const otpStore = new Map(); // In-memory store for OTPs
 
@@ -14,10 +15,54 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET request: Get a single user by userId
+// GET request: Next available Retailer UID
+router.get('/next-uid', async (req, res) => {
+    try {
+        const usersWithUids = await User.find({
+            $or: [
+                { userId: /^MBTAR\d+$/i },
+                { retailerId: /^MBTAR\d+$/i }
+            ]
+        }).select('userId retailerId');
+        let maxRetailerSeq = 10100;
+        for (const u of usersWithUids) {
+            const idToCheck = (u.retailerId && /^MBTAR\d+$/i.test(u.retailerId)) ? u.retailerId : u.userId;
+            const match = idToCheck && idToCheck.match(/^MBTAR0*(\d+)$/i);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num > maxRetailerSeq) {
+                    maxRetailerSeq = num;
+                }
+            }
+        }
+        const nextNum = maxRetailerSeq + 1;
+        const nextUid = `MBTAR${String(nextNum).padStart(9, '0')}`;
+        res.status(200).json({ success: true, nextUid });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// GET request: Get a single user by userId, mobile, or retailerId
 router.get('/:userId', async (req, res) => {
     try {
-        const user = await User.findOne({ userId: { $regex: new RegExp(`^${req.params.userId}$`, 'i') } });
+        const queryTerm = (req.params.userId || '').toString().trim();
+        if (!queryTerm) return res.status(400).json({ message: 'User identifier is required' });
+
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.status(200).json(user);
     } catch (error) {
@@ -29,33 +74,87 @@ router.get('/:userId', async (req, res) => {
 router.post('/', async (req, res) => {
     const { userId, name, shopName, businessAddress, email, password, mobile, role, status, walletBalance } = req.body;
 
+    const cleanMobile = mobile ? mobile.trim() : '';
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    let cleanUserId = (userId || '').trim();
+    let generatedRetailerId = (req.body.retailerId || '').trim();
+    let allocatedSeq = null;
+
     try {
-        // Generate a dynamic unique Retailer ID (e.g. MBM123456) if not provided
-        const randomNum = Math.floor(100000 + Math.random() * 900000);
-        const generatedRetailerId = req.body.retailerId || ('MBM' + randomNum);
+        // Pre-check duplicate mobile if provided
+        if (cleanMobile) {
+            const existingMobile = await User.findOne({ mobile: cleanMobile });
+            if (existingMobile) {
+                return res.status(400).json({ message: 'This Mobile Number is already registered.' });
+            }
+        }
+
+        // Pre-check duplicate email if provided
+        if (cleanEmail) {
+            const existingEmail = await User.findOne({ email: cleanEmail });
+            if (existingEmail) {
+                return res.status(400).json({ message: 'This Email is already registered.' });
+            }
+        }
+
+        // Pre-check duplicate userId if provided
+        if (cleanUserId) {
+            const existingUser = await User.findOne({
+                $or: [
+                    { userId: { $regex: new RegExp('^' + cleanUserId + '$', 'i') } },
+                    { retailerId: { $regex: new RegExp('^' + cleanUserId + '$', 'i') } }
+                ]
+            });
+            if (existingUser) {
+                return res.status(400).json({ message: 'User ID is already taken. Please choose another.' });
+            }
+        }
+
+        const userRole = role || 'retailer';
+        if (userRole === 'retailer') {
+            // Always auto-generate sequential Retailer UID (starts at MBTAR000010101 in ALL CAPITAL LETTERS)
+            const counterRes = await getNextRetailerUidWithSeq(10101);
+            cleanUserId = counterRes.uid.toUpperCase();
+            generatedRetailerId = counterRes.uid.toUpperCase();
+            allocatedSeq = counterRes.seq;
+        } else {
+            if (!cleanUserId) {
+                cleanUserId = 'user_' + Math.floor(100000 + Math.random() * 900000);
+            }
+            if (!generatedRetailerId) {
+                generatedRetailerId = cleanUserId;
+            }
+        }
 
         const newUser = new User({ 
-            userId: (userId || '').trim(), 
+            userId: cleanUserId, 
             retailerId: generatedRetailerId, 
             name: (name || '').trim(),
             shopName: (shopName || '').trim(),
             businessAddress: (businessAddress || '').trim(),
-            email: email ? email.trim() : undefined, 
+            email: cleanEmail || undefined, 
             password: password || '123456', 
-            mobile: mobile ? mobile.trim() : undefined, 
+            mobile: cleanMobile || undefined, 
             role: role || 'retailer',
             status: status || 'Approved',
             walletBalance: parseFloat(walletBalance) || 0.00
         });
         await newUser.save();
+        allocatedSeq = null; // Successfully saved
         res.status(201).json(newUser);
     } catch (error) {
+        if (allocatedSeq) {
+            await rollbackRetailerUid(allocatedSeq);
+        }
         if (error.code === 11000) {
             if (error.keyPattern && error.keyPattern.userId) {
                 return res.status(400).json({ message: 'User ID is already taken. Please choose another.' });
             }
             if (error.keyPattern && error.keyPattern.mobile) {
                 return res.status(400).json({ message: 'This Mobile Number is already registered.' });
+            }
+            if (error.keyPattern && error.keyPattern.email) {
+                return res.status(400).json({ message: 'This Email is already registered.' });
             }
         }
         res.status(400).json({ message: error.message });
@@ -67,14 +166,22 @@ router.post('/login', async (req, res) => {
     const { userId, password } = req.body;
 
     try {
-        // Find user by userId OR mobile (case-insensitive and trimmed)
+        // Find user by userId, mobile, or retailerId (case-insensitive and trimmed)
         const searchQuery = (userId || '').trim();
-        const user = await User.findOne({ 
-            $or: [
-                { userId: { $regex: new RegExp('^' + searchQuery + '$', 'i') } },
-                { mobile: searchQuery }
-            ]
-        });
+        const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = searchQuery.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp('^' + escapedQuery + '$', 'i') } },
+            { retailerId: { $regex: new RegExp('^' + escapedQuery + '$', 'i') } },
+            { mobile: searchQuery }
+        ];
+
+        if (cleanMobile && cleanMobile !== searchQuery) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         
         // If user not found, for development purpose we can auto-create the admin user if they type admin/Admin@1234
         if (!user) {
@@ -143,7 +250,31 @@ router.post('/admin-verify', async (req, res) => {
 // DELETE request: Delete a user
 router.delete('/:id', async (req, res) => {
     try {
-        await User.findByIdAndDelete(req.params.id);
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // If a retailer with auto-generated UID was deleted, synchronize counter with remaining retailers
+        if ((user.userId && /^MBTAR\d+$/i.test(user.userId)) || (user.retailerId && /^MBTAR\d+$/i.test(user.retailerId))) {
+            const remaining = await User.find({
+                $or: [
+                    { userId: /^MBTAR\d+$/i },
+                    { retailerId: /^MBTAR\d+$/i }
+                ]
+            }).select('userId retailerId');
+            let maxSeq = 10100;
+            for (const u of remaining) {
+                const idToCheck = (u.retailerId && /^MBTAR\d+$/i.test(u.retailerId)) ? u.retailerId : u.userId;
+                const match = idToCheck && idToCheck.match(/^MBTAR0*(\d+)$/i);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxSeq) maxSeq = num;
+                }
+            }
+            await Counter.findByIdAndUpdate('retailer_uid', { seq: maxSeq }, { upsert: true });
+        }
+
         res.status(200).json({ message: 'User deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -213,7 +344,13 @@ router.post('/verify-otp', async (req, res) => {
     const storedOtp = otpStore.get(mobile);
     if ((storedOtp && storedOtp === otp) || otp === '123456') {
         otpStore.delete(mobile); // clear after use
-        return res.status(200).json({ success: true, message: 'OTP Verified successfully!' });
+        let user = null;
+        try {
+            const queryMobile = (mobile || '').trim();
+            const cleanMobile = queryMobile.replace(/^\+91/, '').replace(/^0/, '');
+            user = await User.findOne({ $or: [{ mobile: queryMobile }, { mobile: cleanMobile }] });
+        } catch (e) {}
+        return res.status(200).json({ success: true, message: 'OTP Verified successfully!', user });
     }
     
     return res.status(400).json({ success: false, message: 'Invalid OTP! Please try again.' });
@@ -277,6 +414,7 @@ router.post('/register', async (req, res) => {
 
     const personName = (fullName || name || '').trim();
     const cleanMobile = (mobile || '').trim();
+    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : '';
 
     if (!cleanMobile || cleanMobile.length !== 10) {
         return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number.' });
@@ -285,37 +423,29 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
-    // Auto-generate User ID if not explicitly provided
-    let cleanUserId = (userId || '').trim();
-    if (!cleanUserId) {
-        if (personName) {
-            cleanUserId = personName.toLowerCase().replace(/[^a-z0-9]/g, '') + cleanMobile.slice(-4);
-        } else {
-            cleanUserId = 'user_' + cleanMobile;
-        }
-    }
+    let allocatedSeq = null;
 
     try {
-        // Check if userId is already taken
-        const existingUser = await User.findOne({
-            userId: { $regex: new RegExp('^' + cleanUserId + '$', 'i') }
-        });
-        if (existingUser) {
-            // Append random digits if generated ID already exists
-            cleanUserId = cleanUserId + Math.floor(100 + Math.random() * 900);
-        }
-
-        // Check if mobile is already registered
+        // 1. Pre-check: Duplicate Mobile (DO NOT increment counter if mobile is duplicate)
         const existingMobile = await User.findOne({ mobile: cleanMobile });
         if (existingMobile) {
             return res.status(400).json({ message: 'This Mobile Number is already registered. Please login or reset password.' });
         }
 
-        // Generate Retailer ID (e.g. MBM123456)
-        const randomNum = Math.floor(100000 + Math.random() * 900000);
-        const generatedRetailerId = 'MBM' + randomNum;
+        // 2. Pre-check: Duplicate Email (DO NOT increment counter if email is duplicate)
+        if (cleanEmail) {
+            const existingEmail = await User.findOne({ email: cleanEmail });
+            if (existingEmail) {
+                return res.status(400).json({ message: 'This Email is already registered. Please login or use a different email.' });
+            }
+        }
 
-        const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : `${cleanUserId.toLowerCase()}@user.mbmitra.com`;
+        // Always generate sequential Retailer UID starting at MBTAR000010101 in ALL CAPITAL LETTERS
+        const counterRes = await getNextRetailerUidWithSeq(10101);
+        let cleanUserId = counterRes.uid.toUpperCase();
+        allocatedSeq = counterRes.seq;
+        const generatedRetailerId = cleanUserId;
+        const finalEmail = cleanEmail || `${cleanUserId.toLowerCase()}@user.mbmitra.com`;
 
         const newUser = new User({
             userId: cleanUserId,
@@ -324,13 +454,14 @@ router.post('/register', async (req, res) => {
             shopName: shopName ? shopName.trim() : '',
             businessAddress: businessAddress ? businessAddress.trim() : '',
             mobile: cleanMobile,
-            email: cleanEmail,
+            email: finalEmail,
             password: password,
             role: 'retailer',
             status: 'Pending' // Explicitly set to Pending for admin approval
         });
 
         await newUser.save();
+        allocatedSeq = null; // Successfully committed, do not rollback!
 
         res.status(201).json({
             success: true,
@@ -345,12 +476,21 @@ router.post('/register', async (req, res) => {
         });
     } catch (error) {
         console.error('Registration error:', error);
+
+        // If UID was allocated from sequence but registration failed, immediately roll back so no numbers are wasted!
+        if (allocatedSeq) {
+            await rollbackRetailerUid(allocatedSeq);
+        }
+
         if (error.code === 11000) {
             if (error.keyPattern && error.keyPattern.userId) {
                 return res.status(400).json({ message: 'This User ID is already taken. Please choose another.' });
             }
             if (error.keyPattern && error.keyPattern.mobile) {
                 return res.status(400).json({ message: 'This Mobile Number is already registered.' });
+            }
+            if (error.keyPattern && error.keyPattern.email) {
+                return res.status(400).json({ message: 'This Email is already registered.' });
             }
         }
         res.status(500).json({ message: error.message || 'Server error during registration' });

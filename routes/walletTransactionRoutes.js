@@ -201,8 +201,30 @@ router.post('/import', async (req, res) => {
 // GET transactions for a specific user
 router.get('/user/:userId', async (req, res) => {
     try {
+        const queryTerm = (req.params.userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
+        const targetIds = [queryTerm];
+        if (user) {
+            if (user.userId && !targetIds.includes(user.userId)) targetIds.push(user.userId);
+            if (user.retailerId && !targetIds.includes(user.retailerId)) targetIds.push(user.retailerId);
+            if (user.mobile && !targetIds.includes(user.mobile)) targetIds.push(user.mobile);
+        }
+
         const txs = await WalletTransaction.find({ 
-            userId: { $regex: new RegExp(`^${req.params.userId}$`, 'i') } 
+            userId: { $in: targetIds.map(id => new RegExp(`^${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) } 
         }).sort({ createdAt: -1 });
         res.json(txs);
     } catch (error) {
@@ -219,7 +241,21 @@ router.post('/debit', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ userId: { $regex: new RegExp(`^${userId}$`, 'i') } });
+        const queryTerm = (userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -260,7 +296,21 @@ router.post('/credit', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ userId: { $regex: new RegExp(`^${userId}$`, 'i') } });
+        const queryTerm = (userId || '').toString().trim();
+        const escapedQuery = queryTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleanMobile = queryTerm.replace(/^\+91/, '').replace(/^0/, '');
+
+        const orConditions = [
+            { userId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { retailerId: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+            { mobile: queryTerm }
+        ];
+
+        if (cleanMobile && cleanMobile !== queryTerm) {
+            orConditions.push({ mobile: cleanMobile });
+        }
+
+        const user = await User.findOne({ $or: orConditions });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
