@@ -8,8 +8,16 @@ const quickLinkSchema = new mongoose.Schema({
     },
     url: {
         type: String,
-        required: true,
-        trim: true
+        trim: true,
+        default: ''
+    },
+    videoFile: {
+        type: String,
+        default: ''
+    },
+    videoSource: {
+        type: String,
+        default: 'url'
     },
     img: {
         type: String,
@@ -30,6 +38,14 @@ const quickLinkSchema = new mongoose.Schema({
     order: {
         type: Number,
         default: 0
+    },
+    fee: {
+        type: Number,
+        default: 0
+    },
+    menuKey: {
+        type: String,
+        default: 'quickLinks'
     }
 }, {
     timestamps: true

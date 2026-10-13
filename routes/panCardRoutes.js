@@ -140,10 +140,10 @@ const defaultPanTabsConfig = [
   },
   {
     id: 'epan_kyc',
-    label: 'Aadhaar OTP New PAN',
+    label: 'E-Pan Kyc',
     icon: '📲',
     fee: 107,
-    badge: 'Instant E-KYC Mode',
+    badge: 'PAN CARD Service Documents Upload',
     description: 'Instant E-KYC application using Aadhaar OTP / Biometric verification.',
     fields: [
       { name: 'applicantName', label: 'Applicant Full Name (As per Aadhaar)', type: 'text', placeholder: 'Enter full name of applicant...', icon: '👤', required: true, hidden: false },
@@ -223,6 +223,33 @@ const defaultPanTabsConfig = [
       { name: 'proofOfIdentityUrl', label: 'UPLOAD IDENTITY PROOF', type: 'file', required: false, formType: 'Both', hidden: false },
       { name: 'proofOfAddressUrl', label: 'UPLOAD ADDRESS PROOF', type: 'file', required: false, formType: 'Both', hidden: false }
     ]
+  },
+  {
+    id: 'epan_correction_otp',
+    label: 'E-Pan Correction',
+    icon: '⚡',
+    fee: 107,
+    badge: 'PAPER LESS E-Pan Correction OTP Base',
+    description: 'Paperless E-Pan Correction OTP Base application.',
+    fields: []
+  },
+  {
+    id: 'epan_sign_photo',
+    label: 'EPan (Sign&Photo)',
+    icon: '📸',
+    fee: 107,
+    badge: 'PAPER LESS E- Pan Card Upload photo And Sign',
+    description: 'Paperless E-Pan Card with photo and sign upload.',
+    fields: []
+  },
+  {
+    id: 'epan_correction_sign_photo',
+    label: 'E Pan Correction photo with sign',
+    icon: '✍️',
+    fee: 107,
+    badge: 'PAPER LESS E-Pan Correction photo with sign',
+    description: 'Paperless E-Pan Correction with photo and sign.',
+    fields: []
   }
 ];
 
@@ -239,6 +266,13 @@ try {
           return { ...tab, fields: def ? def.fields : [] };
         }
         return tab;
+      });
+
+      // Merge any default tabs that may not be in panTabsConfig.json yet
+      defaultPanTabsConfig.forEach(defTab => {
+        if (!panTabsConfig.some(t => t.id === defTab.id)) {
+          panTabsConfig.push(defTab);
+        }
       });
     }
   }
