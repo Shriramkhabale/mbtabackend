@@ -988,6 +988,8 @@ router.post('/mpan-lookup', async (req, res) => {
       : {};
     const providerMessage = [apiResult.message, apiResult.error, apiResult.detail, apiResult.error_description, apiResult.msg]
       .find(value => typeof value === 'string' && value.trim());
+    const pan = typeof apiResult.pan === 'string' ? apiResult.pan.trim() : '';
+    const lookupSucceeded = apiResult.ok === true || String(apiResult.status || '').toLowerCase() === 'ok';
 
     if (apiResponse.statusCode < 200 || apiResponse.statusCode >= 300) {
       console.error(`mpan.in lookup returned HTTP ${apiResponse.statusCode}.`);
@@ -1000,7 +1002,7 @@ router.post('/mpan-lookup', async (req, res) => {
     }
 
     // mpan.in returns { ok: true, pan: "ABCDE1234F", cost: 6.00, balance: 99.50 }
-    if (!apiResult.ok || !apiResult.pan) {
+    if (!lookupSucceeded || !pan) {
       return res.status(400).json({
         success: false,
         message: providerMessage
@@ -1018,7 +1020,7 @@ router.post('/mpan-lookup', async (req, res) => {
       userId,
       transactionType: 'Debit',
       amount: fee,
-      description: `Find My PAN by Aadhaar - PAN: ${apiResult.pan}`,
+      description: `Find My PAN by Aadhaar - PAN: ${pan}`,
       balanceBefore: currentBalance,
       balanceAfter: userDoc.walletBalance,
       referenceNumber: `MPAN-${Date.now()}`,
@@ -1027,10 +1029,10 @@ router.post('/mpan-lookup', async (req, res) => {
 
     return res.json({
       success: true,
-      pan: apiResult.pan,
+      pan,
       feeDeducted: fee,
       newBalance: userDoc.walletBalance,
-      message: `PAN found: ${apiResult.pan}`
+      message: `PAN found: ${pan}`
     });
 
   } catch (error) {
