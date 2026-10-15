@@ -956,7 +956,7 @@ router.post('/mpan-lookup', async (req, res) => {
     const aadhaarClean = String(aadhaarNumber).trim();
     const payload = JSON.stringify({ api_key: apiKey, aadhaar: aadhaarClean });
 
-    const apiResult = await new Promise((resolve, reject) => {
+    const apiResponse = await new Promise((resolve, reject) => {
       const options = {
         hostname: 'mpan.in',
         path: '/api/pan.php',
@@ -970,8 +970,11 @@ router.post('/mpan-lookup', async (req, res) => {
         let data = '';
         apiRes.on('data', (chunk) => { data += chunk; });
         apiRes.on('end', () => {
-          try { resolve(JSON.parse(data)); }
-          catch (e) { reject(new Error('Invalid response from PAN API')); }
+          try {
+            resolve({ statusCode: apiRes.statusCode, body: JSON.parse(data) });
+          } catch (e) {
+            reject(new Error(`PAN API returned an invalid response (HTTP ${apiRes.statusCode || 'unknown'}).`));
+          }
         });
       });
       apiReq.on('error', reject);
@@ -980,11 +983,29 @@ router.post('/mpan-lookup', async (req, res) => {
       apiReq.end();
     });
 
+    const apiResult = apiResponse.body && typeof apiResponse.body === 'object' && !Array.isArray(apiResponse.body)
+      ? apiResponse.body
+      : {};
+    const providerMessage = [apiResult.message, apiResult.error, apiResult.detail, apiResult.error_description, apiResult.msg]
+      .find(value => typeof value === 'string' && value.trim());
+
+    if (apiResponse.statusCode < 200 || apiResponse.statusCode >= 300) {
+      console.error(`mpan.in lookup returned HTTP ${apiResponse.statusCode}.`);
+      return res.status(502).json({
+        success: false,
+        message: providerMessage
+          ? providerMessage.trim().slice(0, 300)
+          : `PAN provider returned HTTP ${apiResponse.statusCode}. Please check the API key and try again.`
+      });
+    }
+
     // mpan.in returns { ok: true, pan: "ABCDE1234F", cost: 6.00, balance: 99.50 }
     if (!apiResult.ok || !apiResult.pan) {
       return res.status(400).json({
         success: false,
-        message: apiResult.message || 'PAN not found for the given Aadhaar number.'
+        message: providerMessage
+          ? providerMessage.trim().slice(0, 300)
+          : 'The PAN provider did not return a PAN for this Aadhaar. Verify the Aadhaar number and API account, then try again.'
       });
     }
 
