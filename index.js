@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
@@ -32,8 +33,6 @@ const siteSettingsRoutes = require('./routes/siteSettingsRoutes');
 const paysprintOnboardRoutes = require('./routes/paysprintOnboardRoutes');
 const quickLinkRoutes = require('./routes/quickLinkRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const path = require('path');
-
 // Middleware
 app.use(cors());
 // PAN photos and follow-up documents are submitted as data URLs.
