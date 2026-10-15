@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const https = require('https');
 const PanCardApplication = require('../models/PanCardApplication');
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
@@ -908,6 +909,103 @@ router.put('/:id/documents', async (req, res) => {
   } catch (error) {
     console.error('Error adding PAN application document:', error);
     res.status(500).json({ success: false, message: error.message || 'Unable to add document.' });
+  }
+});
+
+// POST /api/pancard/mpan-lookup  — get PAN from Aadhaar via mpan.in API
+router.post('/mpan-lookup', async (req, res) => {
+  try {
+    const { aadhaarNumber, userId, tabFee } = req.body;
+
+    if (!aadhaarNumber || !/^\d{12}$/.test(String(aadhaarNumber).trim())) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid 12-digit Aadhaar number.' });
+    }
+
+    // Trim the key — .env values can have trailing whitespace
+    const apiKey = (process.env.PAN_API || '').trim();
+    if (!apiKey) {
+      return res.status(500).json({ success: false, message: 'PAN API key not configured on server.' });
+    }
+
+    // Fetch user and check wallet balance
+    const userDoc = await User.findOne({ userId });
+    if (!userDoc) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // Use the fee sent from the frontend (tab fee ₹107), fall back to 107
+    const fee = (tabFee && !isNaN(Number(tabFee))) ? Number(tabFee) : 107;
+    const currentBalance = parseFloat(userDoc.walletBalance || 0);
+    if (currentBalance < fee) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient wallet balance. Required ₹${fee}, available ₹${currentBalance.toFixed(2)}.`
+      });
+    }
+
+    // Call mpan.in API — api_key + aadhaar
+    const aadhaarClean = String(aadhaarNumber).trim();
+    const payload = JSON.stringify({ api_key: apiKey, aadhaar: aadhaarClean });
+
+    const apiResult = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'mpan.in',
+        path: '/api/pan.php',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        }
+      };
+      const apiReq = https.request(options, (apiRes) => {
+        let data = '';
+        apiRes.on('data', (chunk) => { data += chunk; });
+        apiRes.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch (e) { reject(new Error('Invalid response from PAN API')); }
+        });
+      });
+      apiReq.on('error', reject);
+      apiReq.setTimeout(15000, () => { apiReq.destroy(); reject(new Error('PAN API request timed out')); });
+      apiReq.write(payload);
+      apiReq.end();
+    });
+
+    // mpan.in returns { ok: true, pan: "ABCDE1234F", cost: 6.00, balance: 99.50 }
+    if (!apiResult.ok || !apiResult.pan) {
+      return res.status(400).json({
+        success: false,
+        message: apiResult.message || 'PAN not found for the given Aadhaar number.'
+      });
+    }
+
+    // Deduct tab fee from retailer wallet
+    userDoc.walletBalance = parseFloat((currentBalance - fee).toFixed(2));
+    await userDoc.save();
+
+    // Record wallet transaction
+    await WalletTransaction.create({
+      userId,
+      transactionType: 'Debit',
+      amount: fee,
+      description: `E-Pan Correction (Aadhaar to PAN lookup) - PAN: ${apiResult.pan}`,
+      balanceBefore: currentBalance,
+      balanceAfter: userDoc.walletBalance,
+      referenceNumber: `MPAN-${Date.now()}`,
+      status: 'Success'
+    });
+
+    return res.json({
+      success: true,
+      pan: apiResult.pan,
+      feeDeducted: fee,
+      newBalance: userDoc.walletBalance,
+      message: `PAN found: ${apiResult.pan}`
+    });
+
+  } catch (error) {
+    console.error('mpan-lookup error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'PAN lookup failed. Please try again.' });
   }
 });
 
