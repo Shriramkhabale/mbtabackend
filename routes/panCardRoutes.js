@@ -1017,10 +1017,10 @@ router.post('/mpan-lookup', async (req, res) => {
 
     // Record wallet transaction
     await WalletTransaction.create({
-      userId,
+      userId: userDoc.userId,
       transactionType: 'Debit',
       amount: fee,
-      description: `Find My PAN by Aadhaar - PAN: ${pan}`,
+      description: 'Find My PAN by Aadhaar',
       balanceBefore: currentBalance,
       balanceAfter: userDoc.walletBalance,
       referenceNumber: `MPAN-${Date.now()}`,
