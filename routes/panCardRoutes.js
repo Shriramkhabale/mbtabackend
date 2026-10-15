@@ -226,6 +226,15 @@ const defaultPanTabsConfig = [
     ]
   },
   {
+    id: 'find_pan_aadhaar',
+    label: 'Find My PAN',
+    icon: '🔍',
+    fee: 107,
+    badge: 'Aadhaar to PAN lookup',
+    description: 'Find an existing PAN using the Aadhaar number.',
+    fields: []
+  },
+  {
     id: 'epan_correction_otp',
     label: 'E-Pan Correction',
     icon: '⚡',
@@ -912,7 +921,7 @@ router.put('/:id/documents', async (req, res) => {
   }
 });
 
-// POST /api/pancard/mpan-lookup  — get PAN from Aadhaar via mpan.in API
+// POST /api/pancard/mpan-lookup — find an existing PAN using Aadhaar via mpan.in
 router.post('/mpan-lookup', async (req, res) => {
   try {
     const { aadhaarNumber, userId, tabFee } = req.body;
@@ -988,7 +997,7 @@ router.post('/mpan-lookup', async (req, res) => {
       userId,
       transactionType: 'Debit',
       amount: fee,
-      description: `E-Pan Correction (Aadhaar to PAN lookup) - PAN: ${apiResult.pan}`,
+      description: `Find My PAN by Aadhaar - PAN: ${apiResult.pan}`,
       balanceBefore: currentBalance,
       balanceAfter: userDoc.walletBalance,
       referenceNumber: `MPAN-${Date.now()}`,

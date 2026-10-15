@@ -3018,6 +3018,15 @@
     ]
   },
   {
+    "id": "find_pan_aadhaar",
+    "label": "Find My PAN",
+    "icon": "🔍",
+    "fee": 107,
+    "badge": "Aadhaar to PAN lookup",
+    "description": "Find an existing PAN using the Aadhaar number.",
+    "fields": []
+  },
+  {
     "id": "epan_kyc",
     "label": "E-Pan Kyc",
     "icon": "📲",
