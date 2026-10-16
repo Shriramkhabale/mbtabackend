@@ -3,7 +3,7 @@
     "id": "manual_new_pan",
     "label": "Manual New PAN",
     "icon": "📄",
-    "fee": 245,
+    "fee": 156,
     "badge": "Form 49A Physical",
     "description": "Detailed manual PAN Application with Photo & Signature Upload support.",
     "fields": [

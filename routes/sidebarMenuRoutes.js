@@ -8,8 +8,23 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    try { const newItem = new SidebarMenu(req.body); await newItem.save(); res.status(201).json(newItem); }
-    catch (err) { res.status(400).json({ message: err.message }); }
+    try {
+        if (req.body.url) {
+            const existing = await SidebarMenu.findOne({ url: req.body.url });
+            if (existing) {
+                if (req.body.label) existing.label = req.body.label;
+                if (req.body.isActive !== undefined) existing.isActive = req.body.isActive;
+                if (req.body.order !== undefined) existing.order = req.body.order;
+                await existing.save();
+                return res.json(existing);
+            }
+        }
+        const newItem = new SidebarMenu(req.body);
+        await newItem.save();
+        res.status(201).json(newItem);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
 });
 
 router.put('/:id', async (req, res) => {
