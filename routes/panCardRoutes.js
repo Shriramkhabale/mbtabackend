@@ -8,6 +8,14 @@ const path = require('path');
 const { cloudinary } = require('../cloudinaryConfig');
 const { notifyAdmin, notifyRetailer } = require('../socket/notificationService');
 
+const DISABLED_ETDS_TAB_IDS = new Set([
+  'epan_kyc',
+  'epan_correction_otp',
+  'epan_sign_photo',
+  'epan_correction_sign_photo'
+]);
+const DISABLED_ETDS_MESSAGE = 'This E-PAN provider flow is not enabled. No provider request was sent and no wallet fee was deducted.';
+
 const emitNotificationSafely = (notificationPromise) => {
   notificationPromise.catch(error => console.error('Notification delivery error:', error));
 };
@@ -356,6 +364,84 @@ router.post('/submit', async (req, res) => {
       signatureUrl,
       remarks
     } = req.body;
+
+    const requestedType = String(applicationType || '').trim().toLowerCase();
+    const disabledEtdsTab = panTabsConfig.find(tab =>
+      DISABLED_ETDS_TAB_IDS.has(tab.id) &&
+      (String(tab.id).toLowerCase() === requestedType || String(tab.label || '').trim().toLowerCase() === requestedType)
+    );
+    const isEpanCorrectionRequest = requestedType === 'epan_correction_otp' ||
+      requestedType === 'e-pan correction' ||
+      (disabledEtdsTab && disabledEtdsTab.id === 'epan_correction_otp');
+    if (isEpanCorrectionRequest) {
+      const details = req.body.details && typeof req.body.details === 'object' ? req.body.details : {};
+      const correctionFields = {
+        title: req.body.title || details.title,
+        firstName: req.body.firstName || details.firstname,
+        middleName: req.body.middleName || details.middlename,
+        lastName: req.body.lastName || details.lastname,
+        panNumber: req.body.panNumber || details.pan,
+        dob: req.body.dob || details.dateofbirth,
+        mobileNumber: req.body.mobileNumber || details.mobileno,
+        email: req.body.email || details.emailid
+      };
+      const missingFields = Object.entries(correctionFields)
+        .filter(([name]) => name !== 'middleName')
+        .filter(([, value]) => !String(value || '').trim())
+        .map(([name]) => name);
+
+      if (missingFields.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Please provide all required PAN correction fields: ${missingFields.join(', ')}.`
+        });
+      }
+
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(String(correctionFields.panNumber).trim())) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid PAN number.' });
+      }
+      if (!['shri', 'smt', 'kumari'].includes(String(correctionFields.title).trim().toLowerCase())) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid title.' });
+      }
+      for (const name of ['firstName', 'middleName', 'lastName']) {
+        if (String(correctionFields[name] || '').trim().length > 25) {
+          return res.status(400).json({ success: false, message: `${name} cannot exceed 25 characters.` });
+        }
+      }
+      const dobValue = String(correctionFields.dob).trim();
+      const isoDob = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dobValue);
+      const providerDob = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dobValue);
+      const dobParts = isoDob
+        ? [Number(isoDob[1]), Number(isoDob[2]), Number(isoDob[3])]
+        : providerDob
+          ? [Number(providerDob[3]), Number(providerDob[2]), Number(providerDob[1])]
+          : null;
+      const parsedDob = dobParts ? new Date(Date.UTC(dobParts[0], dobParts[1] - 1, dobParts[2])) : null;
+      if (!parsedDob || parsedDob.getUTCFullYear() !== dobParts[0] ||
+          parsedDob.getUTCMonth() !== dobParts[1] - 1 || parsedDob.getUTCDate() !== dobParts[2]) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid date of birth.' });
+      }
+      if (!/^\d{10}$/.test(String(correctionFields.mobileNumber).trim())) {
+        return res.status(400).json({ success: false, message: 'Mobile number must be exactly 10 digits.' });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(correctionFields.email).trim())) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
+      }
+      if (String(correctionFields.email).trim().length > 75) {
+        return res.status(400).json({ success: false, message: 'Email address cannot exceed 75 characters.' });
+      }
+    }
+
+    const disabledEtdsAliases = new Set([
+      'aadhaar otp new pan',
+      'e-pan kyc',
+      'e-pan correction',
+      'epan (sign&photo)',
+      'e pan correction photo with sign'
+    ]);
+    if (DISABLED_ETDS_TAB_IDS.has(requestedType) || disabledEtdsTab || disabledEtdsAliases.has(requestedType)) {
+      return res.status(503).json({ success: false, message: DISABLED_ETDS_MESSAGE });
+    }
 
     if (!userId || !applicationType || !applicantName || !mobileNumber || !email) {
       return res.status(400).json({ success: false, message: 'Please fill in all mandatory fields.' });
