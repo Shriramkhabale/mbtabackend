@@ -128,13 +128,16 @@ const postForAuthCode = (clientId, clientSecret) => new Promise((resolve, reject
       }
       try {
         const data = JSON.parse(body);
-        const status = String(data.Status || '').toUpperCase();
-        if (status !== 'SUCCESS' || !data.AuthCode) {
-          return reject(new Error('ETDS provider did not return an authentication code.'));
+        const status = String(data.Status || data.StatusCode || '').toUpperCase();
+        if ((status === 'SUCCESS' || status === '200') && data.AuthCode) {
+          return resolve(String(data.AuthCode));
         }
-        resolve(String(data.AuthCode));
+        // Log full response for debugging
+        console.error('[ETDS auth] Provider response:', body);
+        return reject(new Error(data.Message || data.message || `ETDS provider did not return an authentication code. Response: ${body.slice(0, 200)}`));
       } catch (error) {
-        reject(new Error(`ETDS authentication response was invalid: ${error.message}`));
+        console.error('[ETDS auth] Raw response:', body);
+        reject(new Error(`ETDS authentication response was invalid: ${error.message}. Raw: ${body.slice(0, 200)}`));
       }
     });
   });
@@ -295,7 +298,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
     console.error('[ETDS start] Provider preparation failed:', error.message);
     return res.status(502).json({
       success: false,
-      message: 'Could not prepare the PAN provider request. No wallet fee was deducted.'
+      message: `Could not prepare the PAN provider request: ${error.message}`
     });
   }
 
@@ -502,6 +505,21 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
     return respondWithCallbackRedirect(res, transaction.status, transaction.public_ref, startedAt);
   } catch {
     return respondWithCallbackRedirect(res, 'pending', transaction.public_ref, startedAt);
+  }
+});
+
+// GET /api/etds/ping-provider — temporary diagnostic only, remove after testing
+router.get('/ping-provider', async (req, res) => {
+  const config = getEtdsConfig();
+  const missing = getMissingConfig(config);
+  if (missing.length) {
+    return res.json({ success: false, stage: 'config', missing });
+  }
+  try {
+    const authCode = await postForAuthCode(config.clientId, config.clientSecret);
+    return res.json({ success: true, stage: 'auth_ok', authCode: authCode.slice(0, 8) + '...' });
+  } catch (err) {
+    return res.json({ success: false, stage: 'auth_failed', error: err.message });
   }
 });
 
