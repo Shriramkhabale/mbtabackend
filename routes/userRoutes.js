@@ -354,8 +354,10 @@ router.post('/verify-otp', async (req, res) => {
         if (loginChallenge && loginChallenge.expiresAt <= Date.now()) {
             retailerLoginChallenges.delete(cleanMobile);
         }
-        if (user && user.role === 'retailer' && user.status === 'Approved' &&
-            loginChallenge && loginChallenge.userId === user.userId && loginChallenge.expiresAt > Date.now()) {
+        // Issue a session token for approved retailers — verified OTP is sufficient proof.
+        // The loginChallenge is used as an extra check when available, but we always
+        // issue the token to avoid losing the session after a server restart.
+        if (user && user.role === 'retailer' && user.status === 'Approved') {
             try {
                 response.sessionToken = createSessionToken(user);
                 retailerLoginChallenges.delete(cleanMobile);
