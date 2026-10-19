@@ -4,6 +4,14 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const connectDB = require('./db');
+const { router: etdsRoutes, validateLiveEtdsConfig } = require('./routes/etdsRoutes');
+
+try {
+    validateLiveEtdsConfig();
+} catch (error) {
+    console.error(error.message);
+    process.exit(1);
+}
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -33,6 +41,10 @@ const siteSettingsRoutes = require('./routes/siteSettingsRoutes');
 const paysprintOnboardRoutes = require('./routes/paysprintOnboardRoutes');
 const quickLinkRoutes = require('./routes/quickLinkRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+
+// ETDS callback is public and intentionally registered before global CORS/body parsing.
+app.use('/api/etds', etdsRoutes);
+
 // Middleware
 app.use(cors());
 // PAN photos and follow-up documents are submitted as data URLs.

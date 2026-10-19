@@ -2,8 +2,12 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { Counter, getNextRetailerUid, getNextRetailerUidWithSeq, rollbackRetailerUid } = require('../models/Counter');
+const { createSessionToken } = require('../utils/sessionToken');
+const crypto = require('crypto');
 
 const otpStore = new Map(); // In-memory store for OTPs
+const otpExpiresAt = new Map();
+const retailerLoginChallenges = new Map();
 
 // GET request: Fetch all users
 router.get('/', async (req, res) => {
@@ -212,6 +216,14 @@ router.post('/login', async (req, res) => {
             }
         }
 
+        if (user.role === 'retailer' && user.mobile) {
+            const mobile = user.mobile.trim().replace(/^\+91/, '').replace(/^0/, '');
+            retailerLoginChallenges.set(mobile, {
+                userId: user.userId,
+                expiresAt: Date.now() + 10 * 60 * 1000
+            });
+        }
+
         res.status(200).json({ message: 'Login successful', user });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -289,20 +301,10 @@ router.post('/send-otp', async (req, res) => {
         return res.status(400).json({ success: false, message: 'Enter valid 10-digit number' });
     }
 
-    const BYPASS_PHONE = "9898989898";
-    if (mobile === BYPASS_PHONE) {
-        return res.status(200).json({ 
-            success: true, 
-            message: 'Bypassing OTP for ' + mobile, 
-            otp: '123456', 
-            isBypass: true 
-        });
-    }
-
     // Generate 6-digit OTP
-    const serverOtp = String(Math.floor(100000 + Math.random() * 900000));
+    const serverOtp = String(crypto.randomInt(100000, 1000000));
     otpStore.set(mobile, serverOtp);
-    console.log(`Generated OTP for ${mobile}: ${serverOtp}`);
+    otpExpiresAt.set(mobile, Date.now() + 10 * 60 * 1000);
 
     // Dove SMS credentials (from provided Java code)
     const username = "Experts";
@@ -314,21 +316,17 @@ router.post('/send-otp', async (req, res) => {
 
     try {
         const response = await fetch(url);
-        const text = await response.text();
-        console.log("SMS API response:", text);
+        if (!response.ok) throw new Error(`SMS provider returned HTTP ${response.status}.`);
         
-        res.status(200).json({ 
-            success: true, 
-            message: 'OTP sent successfully via SMS', 
-            otp: serverOtp, 
-            smsResponse: text 
-        }); 
+        res.status(200).json({
+            success: true,
+            message: 'OTP sent successfully via SMS'
+        });
     } catch (error) {
         console.error("SMS API Error:", error);
-        res.status(200).json({ 
-            success: true, 
-            message: 'OTP generated (Dev Mode)', 
-            otp: serverOtp 
+        res.status(502).json({
+            success: false,
+            message: 'Unable to send OTP by SMS. Please try again later.'
         });
     }
 });
@@ -336,21 +334,37 @@ router.post('/send-otp', async (req, res) => {
 // POST request: Verify OTP
 router.post('/verify-otp', async (req, res) => {
     const { mobile, otp } = req.body;
-    
-    if (mobile === "9898989898") {
-        return res.status(200).json({ success: true, message: 'OTP Verified successfully (Bypass)' });
-    }
-    
+
     const storedOtp = otpStore.get(mobile);
-    if ((storedOtp && storedOtp === otp) || otp === '123456') {
+    if (storedOtp && otpExpiresAt.get(mobile) > Date.now() && storedOtp === otp) {
         otpStore.delete(mobile); // clear after use
+        otpExpiresAt.delete(mobile);
         let user = null;
         try {
             const queryMobile = (mobile || '').trim();
             const cleanMobile = queryMobile.replace(/^\+91/, '').replace(/^0/, '');
             user = await User.findOne({ $or: [{ mobile: queryMobile }, { mobile: cleanMobile }] });
-        } catch (e) {}
-        return res.status(200).json({ success: true, message: 'OTP Verified successfully!', user });
+        } catch (error) {
+            console.error('Error loading user after OTP verification:', error.message);
+            return res.status(500).json({ success: false, message: 'Could not complete login.' });
+        }
+        const response = { success: true, message: 'OTP Verified successfully!', user };
+        const cleanMobile = (mobile || '').trim().replace(/^\+91/, '').replace(/^0/, '');
+        const loginChallenge = retailerLoginChallenges.get(cleanMobile);
+        if (loginChallenge && loginChallenge.expiresAt <= Date.now()) {
+            retailerLoginChallenges.delete(cleanMobile);
+        }
+        if (user && user.role === 'retailer' && user.status === 'Approved' &&
+            loginChallenge && loginChallenge.userId === user.userId && loginChallenge.expiresAt > Date.now()) {
+            try {
+                response.sessionToken = createSessionToken(user);
+                retailerLoginChallenges.delete(cleanMobile);
+            } catch (error) {
+                console.error('Could not create retailer session:', error.message);
+                return res.status(500).json({ success: false, message: 'Could not complete login.' });
+            }
+        }
+        return res.status(200).json(response);
     }
     
     return res.status(400).json({ success: false, message: 'Invalid OTP! Please try again.' });
@@ -361,7 +375,7 @@ router.post('/reset-password', async (req, res) => {
     const { mobile, otp, newPassword } = req.body;
     
     const storedOtp = otpStore.get(mobile);
-    if (!storedOtp || storedOtp !== otp) {
+    if (!storedOtp || otpExpiresAt.get(mobile) <= Date.now() || storedOtp !== otp) {
         return res.status(400).json({ message: 'Invalid or expired OTP!' });
     }
     
@@ -375,6 +389,7 @@ router.post('/reset-password', async (req, res) => {
         await user.save();
         
         otpStore.delete(mobile); // clear after successful reset
+        otpExpiresAt.delete(mobile);
         res.status(200).json({ message: 'Password reset successfully!' });
     } catch (error) {
         res.status(500).json({ message: error.message });
