@@ -78,8 +78,7 @@ const validateLiveEtdsConfig = () => {
 const encodeUrlSafe = (buffer) => buffer
   .toString('base64')
   .replace(/\+/g, '-')
-  .replace(/\//g, '_')
-  .replace(/=+$/g, '');
+  .replace(/\//g, '_');
 
 const decodeUrlSafe = (value) => {
   const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
