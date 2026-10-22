@@ -353,7 +353,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       dateofbirth: providerDob,
       mobileno: mobileNumber,
       emailid: email,
-      ...(requiresPanNumber ? { pan: panNumber } : {})
+      pan: panNumber
     }
   };
   const encryptedPayload = encryptProviderValue(JSON.stringify(providerPayload), config.aesKey);
