@@ -14,7 +14,7 @@ const DISABLED_ETDS_TAB_IDS = new Set([
   'epan_sign_photo',
   'epan_correction_sign_photo'
 ]);
-const DISABLED_ETDS_MESSAGE = 'This E-PAN provider flow is not enabled. No provider request was sent and no wallet fee was deducted.';
+const DISABLED_ETDS_MESSAGE = 'Please submit this E-PAN service through its provider authorization flow.';
 
 const emitNotificationSafely = (notificationPromise) => {
   notificationPromise.catch(error => console.error('Notification delivery error:', error));
@@ -386,7 +386,7 @@ router.post('/submit', async (req, res) => {
         email: req.body.email || details.emailid
       };
       const missingFields = Object.entries(correctionFields)
-        .filter(([name]) => name !== 'middleName')
+        .filter(([name]) => name !== 'firstName' && name !== 'middleName')
         .filter(([, value]) => !String(value || '').trim())
         .map(([name]) => name);
 
