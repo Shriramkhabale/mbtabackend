@@ -1,0 +1,437 @@
+[
+  {
+    "id": "offline_general",
+    "label": "Offline Service Request",
+    "icon": "📁",
+    "fee": 50,
+    "badge": "Manual Processing",
+    "description": "Submit offline service application with document attachments for admin manual processing.",
+    "fields": [
+      {
+        "name": "serviceCategory",
+        "label": "SERVICE CATEGORY",
+        "type": "select",
+        "options": [
+          "SELECT CATEGORY",
+          "Aadhaar Offline Work",
+          "Voter Card Offline Work",
+          "Ration Card Offline Work",
+          "Birth / Death Certificate",
+          "Income / Caste / Domicile Certificate",
+          "Land / Property Record",
+          "Other Offline Service"
+        ],
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "applicantName",
+        "label": "APPLICANT FULL NAME",
+        "type": "text",
+        "placeholder": "Enter Applicant Full Name",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "fatherName",
+        "label": "FATHER / HUSBAND NAME",
+        "type": "text",
+        "placeholder": "Enter Father or Husband's Name",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "email",
+        "label": "EMAIL ADDRESS",
+        "type": "email",
+        "placeholder": "Enter Email Address",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "dob",
+        "label": "DATE OF BIRTH",
+        "type": "date",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "mobileNumber",
+        "label": "MOBILE NUMBER",
+        "type": "tel",
+        "placeholder": "10-Digit Mobile Number",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "aadhaarNumber",
+        "label": "AADHAAR / GOVT ID NO",
+        "type": "text",
+        "placeholder": "12-Digit Aadhaar or Govt ID Number",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "state",
+        "label": "STATE",
+        "type": "select",
+        "options": [
+          "PLEASE SELECT",
+          "MAHARASHTRA",
+          "UTTAR PRADESH",
+          "BIHAR",
+          "MADHYA PRADESH",
+          "RAJASTHAN",
+          "WEST BENGAL",
+          "GUJARAT",
+          "KARNATAKA",
+          "DELHI",
+          "PUNJAB",
+          "HARYANA",
+          "OTHER"
+        ],
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "district",
+        "label": "DISTRICT / CITY",
+        "type": "text",
+        "placeholder": "Enter District or City",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "pincode",
+        "label": "PINCODE",
+        "type": "text",
+        "placeholder": "6-Digit Pincode",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "fullAddress",
+        "label": "FULL ADDRESS",
+        "type": "text",
+        "placeholder": "Enter complete street address / village / town",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 2
+      },
+      {
+        "name": "applicantPhoto",
+        "label": "APPLICANT PHOTO",
+        "type": "file",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "idProofDoc",
+        "label": "IDENTITY PROOF DOCUMENT (Aadhaar / Voter / PAN / etc.)",
+        "type": "file",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "supportingDoc",
+        "label": "SUPPORTING / APPLICATION FORM DOCUMENT",
+        "type": "file",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "customerRemarks",
+        "label": "SPECIAL INSTRUCTIONS / REMARKS",
+        "type": "text",
+        "placeholder": "Enter any specific requirements or notes for the operator...",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 2
+      }
+    ]
+  },
+  {
+    "id": "offline_certificate",
+    "label": "Certificate / Document Work",
+    "icon": "📜",
+    "fee": 100,
+    "badge": "Certificate Services",
+    "description": "Offline application for Govt certificates (Caste, Income, Domicile, Non-Creamy Layer, etc.).",
+    "fields": [
+      {
+        "name": "certificateType",
+        "label": "CERTIFICATE TYPE",
+        "type": "select",
+        "options": [
+          "SELECT CERTIFICATE",
+          "INCOME CERTIFICATE",
+          "CASTE CERTIFICATE",
+          "DOMICILE / RESIDENCE CERTIFICATE",
+          "NON-CREAMY LAYER CERTIFICATE",
+          "EWS CERTIFICATE",
+          "CHARACTER CERTIFICATE",
+          "OTHER"
+        ],
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "applicantName",
+        "label": "APPLICANT FULL NAME",
+        "type": "text",
+        "placeholder": "Enter full name as per Aadhaar",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "fatherOrHusbandName",
+        "label": "FATHER / HUSBAND NAME",
+        "type": "text",
+        "placeholder": "Enter Father or Husband Name",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "dob",
+        "label": "DATE OF BIRTH",
+        "type": "date",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "gender",
+        "label": "GENDER",
+        "type": "select",
+        "options": [
+          "MALE",
+          "FEMALE",
+          "TRANSGENDER"
+        ],
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "mobileNumber",
+        "label": "MOBILE NUMBER",
+        "type": "tel",
+        "placeholder": "10-Digit Mobile Number",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "annualIncome",
+        "label": "ANNUAL FAMILY INCOME (IF APPLICABLE)",
+        "type": "text",
+        "placeholder": "e.g. ₹ 80,000",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "rationCardNo",
+        "label": "RATION CARD NUMBER",
+        "type": "text",
+        "placeholder": "Enter Ration Card number",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "state",
+        "label": "STATE",
+        "type": "select",
+        "options": [
+          "PLEASE SELECT",
+          "MAHARASHTRA",
+          "UTTAR PRADESH",
+          "BIHAR",
+          "MADHYA PRADESH",
+          "RAJASTHAN",
+          "WEST BENGAL",
+          "GUJARAT",
+          "KARNATAKA",
+          "DELHI",
+          "OTHER"
+        ],
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "district",
+        "label": "DISTRICT",
+        "type": "text",
+        "placeholder": "Enter District",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "talukaTehsil",
+        "label": "TALUKA / TEHSIL",
+        "type": "text",
+        "placeholder": "Enter Taluka or Tehsil",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "villageCity",
+        "label": "VILLAGE / CITY",
+        "type": "text",
+        "placeholder": "Enter Village or City name",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "aadhaarDoc",
+        "label": "UPLOAD AADHAAR CARD (FRONT & BACK)",
+        "type": "file",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "rationCardDoc",
+        "label": "UPLOAD RATION CARD / RESIDENCE PROOF",
+        "type": "file",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "oldCertDoc",
+        "label": "UPLOAD PREVIOUS CERTIFICATE (IF ANY)",
+        "type": "file",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "additionalDoc",
+        "label": "OTHER SUPPORTING DOCUMENT",
+        "type": "file",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "remarks",
+        "label": "ADDITIONAL NOTES / INSTRUCTIONS",
+        "type": "text",
+        "placeholder": "Enter any remarks...",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 2
+      }
+    ]
+  },
+  {
+    "id": "offline_correction",
+    "label": "Offline Correction Work",
+    "icon": "✏️",
+    "fee": 60,
+    "badge": "Modification & Update",
+    "description": "Submit manual / offline correction requests for names, dates, addresses, or documents.",
+    "fields": [
+      {
+        "name": "correctionCategory",
+        "label": "CORRECTION / UPDATE CATEGORY",
+        "type": "select",
+        "options": [
+          "SELECT SERVICE",
+          "Name Correction",
+          "Date of Birth Update",
+          "Address Change",
+          "Mobile / Email Update",
+          "Document Linking / Delinking",
+          "Other Correction"
+        ],
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "recordIdNumber",
+        "label": "RECORD / DOCUMENT ID NUMBER",
+        "type": "text",
+        "placeholder": "e.g. Card No, Certificate No, Registration No",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "applicantName",
+        "label": "APPLICANT CURRENT NAME",
+        "type": "text",
+        "placeholder": "Current Name on Record",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "correctedDetails",
+        "label": "CORRECTED / NEW DETAILS DESIRED",
+        "type": "text",
+        "placeholder": "Exact new details that should be updated...",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 2
+      },
+      {
+        "name": "mobileNumber",
+        "label": "CONTACT MOBILE NUMBER",
+        "type": "tel",
+        "placeholder": "10-Digit Mobile Number",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "existingDoc",
+        "label": "UPLOAD EXISTING DOCUMENT / RECORD COPY",
+        "type": "file",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "supportingProofDoc",
+        "label": "UPLOAD VALID PROOF FOR CORRECTION",
+        "type": "file",
+        "required": true,
+        "hidden": false,
+        "gridSpan": 1
+      },
+      {
+        "name": "remarks",
+        "label": "REMARKS / DETAILS",
+        "type": "text",
+        "placeholder": "Any extra remarks...",
+        "required": false,
+        "hidden": false,
+        "gridSpan": 2
+      }
+    ]
+  }
+]

@@ -14,6 +14,7 @@ router.post('/', async (req, res) => {
             if (existing) {
                 if (req.body.label) existing.label = req.body.label;
                 if (req.body.isActive !== undefined) existing.isActive = req.body.isActive;
+                if (req.body.dynamicActive !== undefined) existing.dynamicActive = req.body.dynamicActive;
                 if (req.body.order !== undefined) existing.order = req.body.order;
                 await existing.save();
                 return res.json(existing);

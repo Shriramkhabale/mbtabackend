@@ -4,6 +4,7 @@ const sidebarMenuSchema = new mongoose.Schema({
     label: { type: String, default: '' },
     url: { type: String, default: '' },
     isActive: { type: Boolean, default: false },
+    dynamicActive: { type: Boolean, default: true },
     order: { type: Number, default: 0 }
 });
 

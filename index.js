@@ -41,6 +41,7 @@ const siteSettingsRoutes = require('./routes/siteSettingsRoutes');
 const paysprintOnboardRoutes = require('./routes/paysprintOnboardRoutes');
 const quickLinkRoutes = require('./routes/quickLinkRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const offlineWorkRoutes = require('./routes/offlineWorkRoutes');
 
 // ETDS callback is public and intentionally registered before global CORS/body parsing.
 app.use('/api/etds', etdsRoutes);
@@ -66,6 +67,7 @@ app.use('/api/wallet-transactions', walletTransactionRoutes);
 app.use('/api/direct-payment', directPaymentRoutes);
 app.use('/api/payout', payoutRoutes);
 app.use('/api/pancard', panCardRoutes);
+app.use('/api/offline-work', offlineWorkRoutes);
 app.use('/api/notifications', notificationRoutes);
     app.use('/api/staff', staffRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);

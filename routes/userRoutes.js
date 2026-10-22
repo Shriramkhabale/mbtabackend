@@ -541,12 +541,60 @@ router.put('/:id/status', async (req, res) => {
     }
 });
 
+// PUT request: Update user service access permissions
+router.put('/:id/permissions', async (req, res) => {
+    const { permissions } = req.body;
+    try {
+        const idParam = (req.params.id || '').toString().trim();
+        let user = null;
+        if (idParam && idParam.match(/^[0-9a-fA-F]{24}$/)) {
+            user = await User.findById(idParam);
+        }
+        if (!user && idParam) {
+            user = await User.findOne({
+                $or: [
+                    { userId: { $regex: new RegExp(`^${idParam.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+                    { retailerId: { $regex: new RegExp(`^${idParam.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
+                ]
+            });
+        }
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        const updatedPermissions = Array.isArray(permissions) ? permissions : [];
+        const updatedUser = await User.findByIdAndUpdate(
+            user._id,
+            { $set: { permissions: updatedPermissions } },
+            { new: true, runValidators: false }
+        );
+        res.status(200).json({
+            success: true,
+            message: 'User service permissions updated successfully.',
+            user: updatedUser
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // PUT request: Update full user profile details (Admin edit)
 router.put('/:id', async (req, res) => {
-    const { name, shopName, businessAddress, email, mobile, role, status, password, walletBalance, retailerId } = req.body;
+    const { name, shopName, businessAddress, email, mobile, role, status, password, walletBalance, retailerId, permissions } = req.body;
 
     try {
-        const user = await User.findById(req.params.id);
+        const idParam = (req.params.id || '').toString().trim();
+        let user = null;
+        if (idParam && idParam.match(/^[0-9a-fA-F]{24}$/)) {
+            user = await User.findById(idParam);
+        }
+        if (!user && idParam) {
+            user = await User.findOne({
+                $or: [
+                    { userId: { $regex: new RegExp(`^${idParam.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+                    { retailerId: { $regex: new RegExp(`^${idParam.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
+                ]
+            });
+        }
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -564,6 +612,9 @@ router.put('/:id', async (req, res) => {
         }
         if (walletBalance !== undefined && !isNaN(walletBalance)) {
             user.walletBalance = parseFloat(walletBalance);
+        }
+        if (permissions !== undefined && Array.isArray(permissions)) {
+            user.permissions = permissions;
         }
 
         await user.save();
