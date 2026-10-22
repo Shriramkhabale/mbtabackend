@@ -18,16 +18,27 @@ const callbackRequests = new Map();
 const callbackFormParser = express.urlencoded({ extended: false, limit: '32kb', parameterLimit: 5 });
 const jsonParser = express.json({ limit: '32kb' });
 
+const ETDS_SERVICES = {
+  epan_kyc: { label: 'E-Pan Kyc', scopeEnv: 'ETDS_SCOPE_EKYC_PAN_NEW', scopeId: '1' },
+  epan_sign_photo: { label: 'EPan (Sign&Photo)', scopeEnv: 'ETDS_SCOPE_SCAN_PAN_NEW', scopeId: '2' },
+  epan_correction_otp: { label: 'E-Pan Correction', scopeEnv: 'ETDS_SCOPE_EKYC_PAN_CORRECTION', scopeId: '3' },
+  epan_correction_sign_photo: { label: 'E Pan Correction photo with sign', scopeEnv: 'ETDS_SCOPE_SCAN_PAN_CORRECTION', scopeId: '4' }
+};
+
 const getEtdsConfig = () => ({
   clientId: process.env.Client_ID,
   clientSecret: process.env.Client_Secret,
   aesKey: process.env.Key,
   agentId: process.env.Agent_ID,
   subagentId: process.env.subagent_ID,
-  scope: process.env.ETDS_SCOPE || process.env.SCOPE,
   redirectUrl: process.env.ETDS_REDIRECT_URL,
   frontendResultUrl: process.env.ETDS_FRONTEND_RESULT_URL
 });
+
+const getServiceScope = (serviceId) => {
+  const service = ETDS_SERVICES[serviceId];
+  return service ? String(process.env[service.scopeEnv] || '').trim() : '';
+};
 
 const getMissingConfig = (config) => Object.entries({
   Client_ID: config.clientId,
@@ -35,7 +46,6 @@ const getMissingConfig = (config) => Object.entries({
   Key: config.aesKey,
   Agent_ID: config.agentId,
   subagent_ID: config.subagentId,
-  ETDS_SCOPE: config.scope,
   ETDS_REDIRECT_URL: config.redirectUrl,
   ETDS_FRONTEND_RESULT_URL: config.frontendResultUrl
 }).filter(([, value]) => !String(value || '').trim()).map(([name]) => name);
@@ -59,6 +69,10 @@ const validateLiveEtdsConfig = () => {
 
   const config = getEtdsConfig();
   const missing = getMissingConfig(config);
+  Object.values(ETDS_SERVICES).forEach(({ scopeEnv, scopeId }) => {
+    const scope = String(process.env[scopeEnv] || '').trim();
+    if (scope !== scopeId) missing.push(`${scopeEnv} (must be scope ID ${scopeId})`);
+  });
   if (!validateHttpsUrl(config.redirectUrl, '/api/etds/callback')) {
     missing.push('ETDS_REDIRECT_URL (must be HTTPS and point to /api/etds/callback, not PaySprint)');
   }
@@ -213,16 +227,22 @@ const retailerCors = (req, res, next) => {
   })(req, res, next);
 };
 
-const correctionFormFee = () => {
-  const configPath = path.join(__dirname, '..', 'panTabsConfig.json');
-  const tabs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  const correctionTab = tabs.find(tab => tab.id === 'epan_correction_otp');
-  return Number(correctionTab && correctionTab.fee) || 107;
-};
-
 router.options('/start', (req, res, next) => retailerCors(req, res, next));
 
 router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonParser, verifyRetailer, async (req, res) => {
+  const serviceId = String(req.body?.serviceId || 'epan_correction_otp').trim();
+  const service = ETDS_SERVICES[serviceId];
+  if (!service) {
+    return res.status(400).json({ success: false, message: 'Please select a valid E-PAN service.' });
+  }
+  const scope = getServiceScope(serviceId);
+  if (scope !== service.scopeId) {
+    return res.status(503).json({
+      success: false,
+      message: `${service.scopeEnv} must be set to scope ID ${service.scopeId}. No provider request was sent and no wallet fee was deducted.`
+    });
+  }
+
   const config = getEtdsConfig();
   const missing = getMissingConfig(config);
   if (missing.length || !validateHttpsUrl(config.redirectUrl, '/api/etds/callback') ||
@@ -230,7 +250,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       Buffer.byteLength(String(config.aesKey || ''), 'utf8') !== 32) {
     return res.status(503).json({
       success: false,
-      message: 'The PAN correction provider is not fully configured. No provider request was sent and no wallet fee was deducted.'
+      message: 'The E-PAN provider is not fully configured. No provider request was sent and no wallet fee was deducted.'
     });
   }
 
@@ -243,12 +263,12 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
   const dob = String(input.dob || '').trim();
   const mobileNumber = String(input.mobileNumber || '').trim();
   const email = String(input.email || '').trim().toLowerCase();
+  const requiresPanNumber = serviceId === 'epan_correction_otp' || serviceId === 'epan_correction_sign_photo';
   const nameFields = { firstName, middleName, lastName };
   const missingFields = Object.entries({
     title,
-    firstName,
     lastName,
-    panNumber,
+    ...(requiresPanNumber ? { panNumber } : {}),
     dob,
     mobileNumber,
     email
@@ -263,7 +283,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
   if (Object.values(nameFields).some(value => value.length > 25)) {
     return res.status(400).json({ success: false, message: 'Name fields cannot exceed 25 characters.' });
   }
-  if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber)) {
+  if (requiresPanNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber)) {
     return res.status(400).json({ success: false, message: 'Please provide a valid PAN number.' });
   }
   const dobParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
@@ -283,7 +303,18 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
 
   const [year, month, day] = dobParts.slice(1);
   const providerDob = `${day}/${month}/${year}`;
-  const feeAmount = correctionFormFee();
+  let serviceTab;
+  try {
+    const tabs = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'panTabsConfig.json'), 'utf8'));
+    serviceTab = tabs.find(tab => tab.id === serviceId);
+  } catch (error) {
+    console.error('[ETDS start] Could not load PAN service configuration:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load the selected PAN service configuration.' });
+  }
+  if (!serviceTab) {
+    return res.status(500).json({ success: false, message: 'The selected PAN service is not configured.' });
+  }
+  const feeAmount = Number(serviceTab.fee) || 107;
   let user;
   let authCode;
   try {
@@ -313,7 +344,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       tid: transactionId,
       agentid: config.agentId,
       subagentid: config.subagentId,
-      scope: config.scope,
+      scope,
       redirecturl: config.redirectUrl,
       title,
       lastname: lastName,
@@ -322,7 +353,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       dateofbirth: providerDob,
       mobileno: mobileNumber,
       emailid: email,
-      pan: panNumber
+      ...(requiresPanNumber ? { pan: panNumber } : {})
     }
   };
   const encryptedPayload = encryptProviderValue(JSON.stringify(providerPayload), config.aesKey);
@@ -339,8 +370,8 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
   try {
     application = new PanCardApplication({
       userId: user.userId,
-      applicationType: 'E-PAN Correction',
-      applicantName: [firstName, middleName, lastName].filter(Boolean).join(' '),
+      applicationType: serviceTab.label,
+      applicantName: [firstName, middleName, lastName].filter(Boolean).join(' ') || lastName,
       dob,
       gender: 'N/A',
       mobileNumber,
@@ -351,13 +382,14 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       status: 'Submitted',
       details: {
         title,
+        serviceId,
         firstName,
         middleName,
         lastName,
         firstname: firstName,
         middlename: middleName,
         lastname: lastName,
-        pan: panNumber,
+        ...(requiresPanNumber ? { pan: panNumber } : {}),
         dateofbirth: providerDob,
         mobileno: mobileNumber,
         emailid: email
@@ -370,7 +402,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       tid: transactionId,
       userId: user.userId,
       applicationId: application._id,
-      serviceType: 'E-PAN Correction',
+      serviceType: serviceTab.label,
       status: 'initiated'
     });
     await etdsTransaction.save();
@@ -386,7 +418,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       amount: feeAmount,
       balanceBefore,
       balanceAfter: user.walletBalance,
-      description: `PAN Application Fee - E-PAN Correction (Ack: ${acknowledgementNumber})`,
+      description: `PAN Application Fee - ${serviceTab.label} (Ack: ${acknowledgementNumber})`,
       referenceNumber: acknowledgementNumber,
       status: 'Success'
     });
@@ -402,7 +434,7 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
     console.error('[ETDS start] Could not save provider transaction:', error.message);
     return res.status(500).json({
       success: false,
-      message: 'Could not save the PAN correction request. No provider request was sent.'
+      message: 'Could not save the PAN request. No provider request was sent.'
     });
   }
 
