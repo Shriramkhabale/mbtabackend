@@ -25,6 +25,7 @@ const etdsTransactionSchema = new mongoose.Schema({
     default: true
   },
   serviceType: { type: String, required: true },
+  providerMessage: { type: String, default: '' },
   status: {
     type: String,
     enum: ['initiated', 'pending', 'success', 'failed', 'unknown'],
