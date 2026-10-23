@@ -505,7 +505,7 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
     await session.withTransaction(async () => {
       transaction = await EtdsTransaction.findOne({ tid }).session(session);
       if (!transaction) throw new Error('ETDS transaction disappeared while processing its callback.');
-      if (!['initiated', 'pending'].includes(transaction.status)) return;
+      if (!['initiated', 'pending', 'unknown'].includes(transaction.status)) return;
 
       if (callbackStatus === 'success') {
         const application = await PanCardApplication.findById(transaction.applicationId).session(session);
