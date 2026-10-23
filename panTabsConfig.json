@@ -4405,7 +4405,7 @@
     "id": "epan_correction_otp",
     "label": "E-Pan Correction",
     "icon": "⚡",
-    "fee": 107,
+    "fee": 200,
     "badge": "PAPER LESS E-Pan Correction OTP Base",
     "description": "Paperless E-Pan Correction OTP Base application.",
     "fields": []
