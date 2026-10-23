@@ -19,6 +19,11 @@ const etdsTransactionSchema = new mongoose.Schema({
     ref: 'PanCardApplication',
     required: true
   },
+  walletDebited: {
+    type: Boolean,
+    // Existing transactions were charged during submission; new ones explicitly start false.
+    default: true
+  },
   serviceType: { type: String, required: true },
   status: {
     type: String,
