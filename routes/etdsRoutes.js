@@ -161,23 +161,64 @@ const postForAuthCode = (clientId, clientSecret) => new Promise((resolve, reject
   request.end();
 });
 
-const safeStatusFromPayload = (payload) => {
-  const values = [];
+const getProviderStatusFields = (payload) => {
+  const fields = [];
   const visit = (value) => {
     if (!value || typeof value !== 'object') return;
     Object.entries(value).forEach(([key, child]) => {
-      if (/^(status|statuscode|applicationstatus|requeststatus)$/i.test(key) && typeof child === 'string') {
-        values.push(child.trim().toLowerCase().replace(/[\s_-]/g, ''));
+      if (/^(status|statuscode|applicationstatus|requeststatus)$/i.test(key) &&
+          (typeof child === 'string' || typeof child === 'number')) {
+        fields.push({ key, value: String(child).trim() });
       } else if (child && typeof child === 'object') {
         visit(child);
       }
     });
   };
   visit(payload);
+  return fields;
+};
+
+const getProviderTextFields = (payload) => {
+  const fields = [];
+  const visit = (value) => {
+    if (!value || typeof value !== 'object') return;
+    Object.entries(value).forEach(([key, child]) => {
+      if ((typeof child === 'string' || typeof child === 'number') &&
+          /^(error(code|message|description)?|failure(code|message)?|message|description|remarks?)$/i.test(key)) {
+        const text = String(child).trim();
+        if (text) fields.push({ key, value: text });
+      } else if (child && typeof child === 'object') {
+        visit(child);
+      }
+    });
+  };
+  visit(payload);
+  return fields;
+};
+
+const safeStatusFromPayload = (payload) => {
+  const values = getProviderStatusFields(payload)
+    .map(({ value }) => value.toLowerCase().replace(/[\s_-]/g, ''));
   if (values.some(value => ['success', 'successful', 'completed', 'approved', '200'].includes(value))) return 'success';
   if (values.some(value => ['failed', 'failure', 'rejected', 'error', '405'].includes(value))) return 'failed';
   if (values.some(value => ['pending', 'inprogress', 'processing'].includes(value))) return 'pending';
+  const textFields = getProviderTextFields(payload);
+  const hasErrorCode = textFields.some(({ key, value }) =>
+    /^(errorcode|failurecode)$/i.test(key) &&
+    !['0', '00', '200', 'success', 'none', 'noerror', 'null'].includes(value.toLowerCase().replace(/[\s_-]/g, ''))
+  );
+  const describesFailure = textFields.some(({ key, value }) =>
+    /^(errormessage|errordescription|failuremessage|message|description|remarks?)$/i.test(key) &&
+    /\b(fail(?:ed|ure)?|reject(?:ed)?|invalid|error|not valid|already been issued|exhausted|session is invalid)\b/i.test(value)
+  );
+  if (hasErrorCode || describesFailure) return 'failed';
   return 'unknown';
+};
+
+const getProviderFailureMessage = (payload) => {
+  const fields = getProviderTextFields(payload);
+  const message = fields.find(({ key }) => /^(errormessage|errordescription|failuremessage|message|description|remarks?)$/i.test(key));
+  return message ? message.value.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, 500) : '';
 };
 
 const callbackRedirect = (status, publicRef) => {
@@ -432,7 +473,7 @@ router.get('/result/:ref', retailerCors, verifyRetailer, async (req, res) => {
     const transaction = await EtdsTransaction.findOne({
       public_ref: req.params.ref,
       userId: req.retailer.userId
-    }).select('public_ref userId serviceType status createdAt updatedAt');
+    }).select('public_ref userId serviceType providerMessage status createdAt updatedAt');
 
     if (!transaction) return res.status(404).json({ success: false, message: 'Transaction not found.' });
 
@@ -440,7 +481,7 @@ router.get('/result/:ref', retailerCors, verifyRetailer, async (req, res) => {
       initiated: 'Your request was submitted and is waiting for the provider.',
       pending: 'The provider is processing your request. Check again shortly.',
       success: 'The provider has completed your request.',
-      failed: 'The provider could not complete your request. Contact support for assistance.',
+      failed: transaction.providerMessage || 'The provider could not complete your request. Contact support for assistance.',
       unknown: 'The provider response is being reviewed. Contact support if this message continues.'
     };
     return res.json({
@@ -491,10 +532,21 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
   if (!transaction) return respondWithCallbackRedirect(res, 'unmatched', null, startedAt);
 
   let callbackStatus = 'pending';
+  let providerMessage = '';
   try {
     const plaintext = decryptCallbackPayload(callbackData.payload, config.aesKey);
     const decodedPayload = JSON.parse(plaintext);
     callbackStatus = safeStatusFromPayload(decodedPayload);
+    if (callbackStatus === 'failed') providerMessage = getProviderFailureMessage(decodedPayload);
+    if (callbackStatus === 'unknown') {
+      const fields = getProviderStatusFields(decodedPayload).map(({ key, value }) => ({
+        key,
+        value: /^\d{1,4}$/.test(value) || /^[a-z _-]{1,24}$/i.test(value) ? value : '[redacted]'
+      }));
+      console.warn(
+        `[ETDS callback] Unrecognized provider status ref=${transaction.public_ref} fields=${JSON.stringify(fields)}`
+      );
+    }
   } catch {
     callbackStatus = 'pending';
   }
@@ -544,11 +596,17 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
       }
 
       transaction.status = callbackStatus;
+      if (providerMessage) transaction.providerMessage = providerMessage;
       await transaction.save({ session });
       const applicationStatus = callbackStatus === 'failed' ? 'Rejected' : 'In Progress';
       await PanCardApplication.findByIdAndUpdate(
         transaction.applicationId,
-        { status: applicationStatus },
+        {
+          status: applicationStatus,
+          ...(callbackStatus === 'failed'
+            ? { remarks: providerMessage || 'The provider could not complete this PAN request.' }
+            : {})
+        },
         { session }
       );
     });
@@ -576,4 +634,4 @@ router.get('/ping-provider', async (req, res) => {
   }
 });
 
-module.exports = { router, validateLiveEtdsConfig };
+module.exports = { router, validateLiveEtdsConfig, safeStatusFromPayload };
