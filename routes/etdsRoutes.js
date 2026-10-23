@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
 const PanCardApplication = require('../models/PanCardApplication');
@@ -365,8 +366,6 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
 
   let application;
   let etdsTransaction;
-  let walletTransaction;
-  let balanceDebited = false;
   try {
     application = new PanCardApplication({
       userId: user.userId,
@@ -402,39 +401,18 @@ router.post('/start', (req, res, next) => retailerCors(req, res, next), jsonPars
       tid: transactionId,
       userId: user.userId,
       applicationId: application._id,
+      walletDebited: false,
       serviceType: serviceTab.label,
       status: 'initiated'
     });
     await etdsTransaction.save();
-
-    const balanceBefore = user.walletBalance;
-    user.walletBalance -= feeAmount;
-    await user.save();
-    balanceDebited = true;
-
-    walletTransaction = new WalletTransaction({
-      userId: user.userId,
-      transactionType: 'Debit',
-      amount: feeAmount,
-      balanceBefore,
-      balanceAfter: user.walletBalance,
-      description: `PAN Application Fee - ${serviceTab.label} (Ack: ${acknowledgementNumber})`,
-      referenceNumber: acknowledgementNumber,
-      status: 'Success'
-    });
-    await walletTransaction.save();
   } catch (error) {
-    if (walletTransaction) await WalletTransaction.deleteOne({ _id: walletTransaction._id });
     if (etdsTransaction) await EtdsTransaction.deleteOne({ _id: etdsTransaction._id });
     if (application) await PanCardApplication.deleteOne({ _id: application._id });
-    if (balanceDebited) {
-      user.walletBalance += feeAmount;
-      await user.save();
-    }
     console.error('[ETDS start] Could not save provider transaction:', error.message);
     return res.status(500).json({
       success: false,
-      message: 'Could not save the PAN request. No provider request was sent.'
+      message: 'Could not save the PAN request. No provider request was sent and no wallet fee was deducted.'
     });
   }
 
@@ -521,21 +499,65 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
     callbackStatus = 'pending';
   }
 
+  let session;
   try {
-    if (transaction.status === 'initiated' || transaction.status === 'pending') {
-      transaction.status = callbackStatus;
-      await transaction.save();
+    session = await mongoose.startSession();
+    await session.withTransaction(async () => {
+      transaction = await EtdsTransaction.findOne({ tid }).session(session);
+      if (!transaction) throw new Error('ETDS transaction disappeared while processing its callback.');
+      if (!['initiated', 'pending'].includes(transaction.status)) return;
 
-      const applicationStatus = callbackStatus === 'success'
-        ? 'Completed'
-        : callbackStatus === 'failed'
-          ? 'Rejected'
-          : 'In Progress';
-      await PanCardApplication.findByIdAndUpdate(transaction.applicationId, { status: applicationStatus });
-    }
+      if (callbackStatus === 'success') {
+        const application = await PanCardApplication.findById(transaction.applicationId).session(session);
+        const user = await User.findOne({ userId: transaction.userId, role: 'retailer' }).session(session);
+        if (!application || !user) {
+          throw new Error('Could not find the PAN application or retailer for the successful callback.');
+        }
+
+        if (!transaction.walletDebited) {
+          const feeAmount = Number(application.feeAmount);
+          const balanceBefore = Number(user.walletBalance || 0);
+          if (!Number.isFinite(feeAmount) || feeAmount <= 0 || balanceBefore < feeAmount) {
+            throw new Error('The retailer wallet does not have enough balance to charge the successful PAN request.');
+          }
+
+          user.walletBalance = balanceBefore - feeAmount;
+          await user.save({ session });
+          await WalletTransaction.create([{
+            userId: user.userId,
+            transactionType: 'Debit',
+            amount: feeAmount,
+            balanceBefore,
+            balanceAfter: user.walletBalance,
+            description: `PAN Application Fee - ${transaction.serviceType} (Ack: ${application.ackNumber})`,
+            referenceNumber: application.ackNumber,
+            status: 'Success'
+          }], { session });
+          transaction.walletDebited = true;
+        }
+
+        application.status = 'Completed';
+        await application.save({ session });
+        transaction.status = 'success';
+        await transaction.save({ session });
+        return;
+      }
+
+      transaction.status = callbackStatus;
+      await transaction.save({ session });
+      const applicationStatus = callbackStatus === 'failed' ? 'Rejected' : 'In Progress';
+      await PanCardApplication.findByIdAndUpdate(
+        transaction.applicationId,
+        { status: applicationStatus },
+        { session }
+      );
+    });
     return respondWithCallbackRedirect(res, transaction.status, transaction.public_ref, startedAt);
-  } catch {
+  } catch (error) {
+    console.error('[ETDS callback] Could not finalize provider response:', error.message);
     return respondWithCallbackRedirect(res, 'pending', transaction.public_ref, startedAt);
+  } finally {
+    if (session) await session.endSession();
   }
 });
 
