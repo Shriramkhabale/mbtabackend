@@ -42,6 +42,7 @@ const paysprintOnboardRoutes = require('./routes/paysprintOnboardRoutes');
 const quickLinkRoutes = require('./routes/quickLinkRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const offlineWorkRoutes = require('./routes/offlineWorkRoutes');
+const toolRoutes = require('./routes/toolRoutes');
 
 // ETDS callback is public and intentionally registered before global CORS/body parsing.
 app.use('/api/etds', etdsRoutes);
@@ -73,6 +74,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/paysprint/onboard', paysprintOnboardRoutes);
 app.use('/api/quick-links', quickLinkRoutes);
+app.use('/api/tools', toolRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Direct PaySprint Live Webhook Callback Endpoint
@@ -106,5 +108,5 @@ process.on('uncaughtException', (err) => {
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`); // ready
 });
