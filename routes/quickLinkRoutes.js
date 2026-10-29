@@ -59,6 +59,19 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET successful paid quick-link visits from the existing wallet ledger
+router.get('/logs', async (req, res) => {
+    try {
+        const transactions = await WalletTransaction.find({
+            description: /Visiting Fee/i
+        }).sort({ createdAt: -1 });
+        res.json(transactions);
+    } catch (error) {
+        console.error('Error fetching quick-link service logs:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch quick-link service logs' });
+    }
+});
+
 // POST a new quick link (with optional image and/or device video upload)
 router.post('/', quickLinkUpload, async (req, res) => {
     try {
