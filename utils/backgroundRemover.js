@@ -18,46 +18,55 @@ async function callBackgroundRemoverAi(options = {}) {
     ...rest
   } = options;
 
-  // Prepare data
+  const apiKey = apikeyfill || process.env.DHBOSS_BG_REMOVER_API_KEY || "";
+  const imageInput = file_url || image_url;
+
+  if (!apiKey) {
+    throw new Error("DHBOSS_BG_REMOVER_API_KEY is not configured");
+  }
+  if (!imageInput) {
+    throw new Error("A file_url or image_url is required for background removal");
+  }
+
   const data = qs.stringify({
     ...(task_id ? { task_id } : {}),
-    ...((file_url || image_url) ? { file_url: file_url || image_url, image_url: file_url || image_url } : {}),
-    ...(apikeyfill ? { apikeyfill } : {}),
+    ...((file_url || image_url) ? { file_url: imageInput, image_url: imageInput } : {}),
+    ...(apiKey ? { apikeyfill: apiKey } : {}),
     ...rest
   });
 
-  // API call
   try {
     const res = await axios.post(BACKGROUND_REMOVER_API_URL, data, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       }
     });
-    console.log("Background Remover API Success:", res.data);
     return res.data;
   } catch (err) {
-    console.error("API Error:", err.response?.data || err.message);
+    console.error("Background Remover API Error:", err.response?.data || err.message);
     throw err;
   }
 }
 
-// Standalone test runner matching the provided snippet
 function runSampleApiRequest() {
-  const data = qs.stringify({});
+  const data = qs.stringify({
+    image_url: "https://example.com/sample-image.jpg",
+    apikeyfill: process.env.DHBOSS_BG_REMOVER_API_KEY || ""
+  });
 
-  return axios.post("https://api.dhboss.com/apicall/background_remover_image/", data, {
+  return axios.post(BACKGROUND_REMOVER_API_URL, data, {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     }
   })
-  .then(res => {
-    console.log(res.data);
-    return res.data;
-  })
-  .catch(err => {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
-  });
+    .then((res) => {
+      console.log(res.data);
+      return res.data;
+    })
+    .catch((err) => {
+      console.error("Background Remover API Error:", err.response?.data || err.message);
+      throw err;
+    });
 }
 
 module.exports = {

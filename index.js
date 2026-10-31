@@ -49,8 +49,8 @@ app.use('/api/etds', etdsRoutes);
 
 // Middleware
 app.use(cors());
-// PAN photos and follow-up documents are submitted as data URLs.
-app.use(express.json({ limit: '12mb' }));
+// Image tools submit base64 data URLs; a 20 MB image expands to roughly 27 MB in JSON.
+app.use(express.json({ limit: '32mb' }));
 app.use(express.urlencoded({ extended: true }));
 // Serve uploaded images statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
