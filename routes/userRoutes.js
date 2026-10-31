@@ -141,7 +141,8 @@ router.post('/', async (req, res) => {
             mobile: cleanMobile || undefined, 
             role: role || 'retailer',
             status: status || 'Approved',
-            walletBalance: parseFloat(walletBalance) || 0.00
+            walletBalance: parseFloat(walletBalance) || 0.00,
+            ...(Array.isArray(req.body.permissions) && req.body.permissions.length > 0 ? { permissions: req.body.permissions } : {})
         });
         await newUser.save();
         allocatedSeq = null; // Successfully saved
