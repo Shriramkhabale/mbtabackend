@@ -274,6 +274,7 @@ router.post('/process', async (req, res) => {
     const isPdfToHtmlTool = (toolTitle || '').toLowerCase().includes('pdf 2 html') || (toolTitle || '').toLowerCase().includes('pdf to html');
     const isPmjayTool = (toolTitle || '').toLowerCase().includes('pmjay') || (toolTitle || '').toLowerCase().includes('ayushman');
     const targetFileUrl = fileUrl || (typeof fileData === 'string' && fileData.startsWith('http') ? fileData : null);
+    const backgroundRemoverImage = targetFileUrl || (isBgRemoverTool && typeof fileData === 'string' ? fileData : null);
 
     if (isAadharTool && targetFileUrl) {
       try {
@@ -312,17 +313,20 @@ router.post('/process', async (req, res) => {
       } catch (apiErr) {
         console.warn('All Type ID Card AI API call warning (using fallback layout):', apiErr.message);
       }
-    } else if (isBgRemoverTool && targetFileUrl) {
+    } else if (isBgRemoverTool && backgroundRemoverImage) {
       try {
         const { callBackgroundRemoverAi } = require('../utils/backgroundRemover');
         apiResponse = await callBackgroundRemoverAi({
-          file_url: targetFileUrl,
-          image_url: targetFileUrl,
-          ...req.body
+          ...req.body,
+          file_url: backgroundRemoverImage,
+          image_url: backgroundRemoverImage
         });
       } catch (apiErr) {
-        console.warn('Background Remover AI API call warning (using fallback layout):', apiErr.message);
+        console.error('Background Remover AI API call failed:', apiErr.response?.data || apiErr.message);
+        throw apiErr;
       }
+    } else if (isBgRemoverTool) {
+      throw new Error('An image is required for background removal');
     } else if (isDigitalSignatureTool && targetFileUrl) {
       try {
         const { callDigitalSignatureValidationAi } = require('../utils/digitalSignatureValidator');
