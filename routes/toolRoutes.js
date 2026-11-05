@@ -3,6 +3,45 @@ const router = express.Router();
 const Tool = require('../models/Tool');
 const SidebarMenu = require('../models/SidebarMenu');
 
+const getBackgroundRemoverOutputUrl = (apiResponse) => {
+  const outputKeys = [
+    'output_url',
+    'outputUrl',
+    'output_file_url',
+    'outputFileUrl',
+    'result_url',
+    'resultUrl',
+    'result',
+    'output',
+    'processed_image_url',
+    'processedImageUrl',
+    'transparent_image_url',
+    'transparentImageUrl',
+    'file_url',
+    'fileUrl',
+    'url'
+  ];
+
+  const findUrl = (value) => {
+    if (!value || typeof value !== 'object') return null;
+    for (const key of outputKeys) {
+      if (typeof value[key] === 'string' && /^(https?:\/\/|data:image\/)/i.test(value[key])) {
+        return value[key];
+      }
+    }
+    for (const child of Object.values(value)) {
+      const nestedUrl = findUrl(child);
+      if (nestedUrl) return nestedUrl;
+    }
+    return null;
+  };
+
+  if (typeof apiResponse === 'string' && /^(https?:\/\/|data:image\/)/i.test(apiResponse)) {
+    return apiResponse;
+  }
+  return findUrl(apiResponse);
+};
+
 // Initial default tools list to seed if empty
 const DEFAULT_TOOLS = [
   {
@@ -431,7 +470,9 @@ router.post('/process', async (req, res) => {
         heightPx: Math.round((heightMm / 25.4) * dpi)
       },
       outputFileName: `${(toolTitle || 'document').replace(/[^a-zA-Z0-9]/g, '_')}_output.pdf`,
-      outputUrl: apiResponse?.file_url || apiResponse?.url || apiResponse?.image_url || fileData || null,
+      outputUrl: isBgRemoverTool
+        ? getBackgroundRemoverOutputUrl(apiResponse)
+        : apiResponse?.file_url || apiResponse?.url || apiResponse?.image_url || fileData || null,
       apiData: apiResponse || null
     };
 
@@ -516,14 +557,19 @@ router.post('/all-id-cutter', async (req, res) => {
 router.post('/bg-remover', async (req, res) => {
   try {
     const { callBackgroundRemoverAi } = require('../utils/backgroundRemover');
-    const data = await callBackgroundRemoverAi(req.body);
-    res.json({ success: true, data });
+    const data = await callBackgroundRemoverAi({
+      image_url: req.body.image_url || req.body.file_url || req.body.fileData
+    });
+    res.json({
+      success: true,
+      data,
+      outputUrl: getBackgroundRemoverOutputUrl(data)
+    });
   } catch (err) {
-    console.error('Background Remover API Error:', err.response?.data || err.message);
+    console.error('Background Remover API Error:', err.message);
     res.status(500).json({
       success: false,
-      message: err.response?.data?.message || err.message || 'API call failed',
-      error: err.response?.data || err.message
+      message: err.message || 'API call failed'
     });
   }
 });
