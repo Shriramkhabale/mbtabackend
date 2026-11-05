@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 
@@ -54,84 +55,87 @@ const creditVerifiedOrder = async (req, tx, providerData) => {
     }
 
     const providerTxnId = providerData.upi_txn_id || String(providerData.id || '');
-    const claimedTx = await WalletTransaction.findOneAndUpdate(
-        { _id: tx._id, status: 'Pending' },
-        {
-            $set: {
-                status: 'Success',
-                gatewayTxnId: providerTxnId,
-                description: `Wallet Top-Up via EkQR${providerTxnId ? ` (UTR: ${providerTxnId})` : ''}`
-            }
-        },
-        { new: true }
-    );
+    const session = await mongoose.startSession();
+    let result;
+    let walletEvent;
 
-    if (!claimedTx) {
-        const currentTx = await WalletTransaction.findById(tx._id);
-        if (currentTx && currentTx.status === 'Success') {
-            const user = await User.findOne({ userId: currentTx.userId });
-            return {
+    try {
+        await session.withTransaction(async () => {
+            const currentTx = await WalletTransaction.findById(tx._id).session(session);
+            if (!currentTx) {
+                throw new Error(`Wallet transaction not found: ${tx.referenceNumber}`);
+            }
+
+            const user = await User.findOne({ userId: currentTx.userId }).session(session);
+            if (!user) {
+                throw new Error(`Wallet owner not found for transaction ${currentTx.referenceNumber}`);
+            }
+
+            const recordedCredit = Number(currentTx.balanceAfter) - Number(currentTx.balanceBefore);
+            if (
+                currentTx.status === 'Success' &&
+                Math.abs(recordedCredit - Number(currentTx.amount)) < 0.005
+            ) {
+                result = {
+                    success: true,
+                    status: 'Success',
+                    message: 'Payment already credited.',
+                    walletBalance: Number(user.walletBalance || 0),
+                    amount: currentTx.amount
+                };
+                walletEvent = null;
+                return;
+            }
+
+            if (currentTx.status !== 'Pending' && currentTx.status !== 'Success') {
+                result = {
+                    success: false,
+                    status: currentTx.status,
+                    message: 'Payment is not pending.'
+                };
+                walletEvent = null;
+                return;
+            }
+
+            const creditAmount = Number(currentTx.amount);
+            const balanceBefore = Number(user.walletBalance || 0);
+            user.walletBalance = Number((balanceBefore + creditAmount).toFixed(2));
+            await user.save({ session });
+
+            currentTx.status = 'Success';
+            currentTx.gatewayTxnId = providerTxnId;
+            currentTx.description = `Wallet Top-Up via EkQR${providerTxnId ? ` (UTR: ${providerTxnId})` : ''}`;
+            currentTx.balanceBefore = balanceBefore;
+            currentTx.balanceAfter = user.walletBalance;
+            await currentTx.save({ session });
+
+            result = {
                 success: true,
                 status: 'Success',
-                message: 'Payment already credited.',
-                walletBalance: user ? user.walletBalance : currentTx.balanceAfter,
-                amount: currentTx.amount
+                message: `Payment verified. ₹${creditAmount.toFixed(2)} credited to your wallet.`,
+                walletBalance: user.walletBalance,
+                amount: creditAmount
             };
-        }
-        return { success: false, status: currentTx ? currentTx.status : 'Pending', message: 'Payment is not confirmed.' };
+            walletEvent = {
+                userId: user.userId,
+                walletBalance: user.walletBalance,
+                amount: creditAmount,
+                type: 'Credit',
+                txnId: currentTx.referenceNumber,
+                status: 'Success'
+            };
+        });
+    } finally {
+        await session.endSession();
     }
-
-    const user = await User.findOneAndUpdate(
-        { userId: claimedTx.userId },
-        [{
-            $set: {
-                walletBalance: {
-                    $round: [
-                        { $add: [{ $ifNull: ['$walletBalance', 0] }, Number(claimedTx.amount)] },
-                        2
-                    ]
-                }
-            }
-        }],
-        { new: true }
-    );
-
-    if (!user) {
-        await WalletTransaction.updateOne(
-            { _id: claimedTx._id, status: 'Success' },
-            { $set: { status: 'Pending' } }
-        );
-        throw new Error(`Wallet owner not found for transaction ${claimedTx.referenceNumber}`);
-    }
-
-    const balanceAfter = Number(Number(user.walletBalance).toFixed(2));
-    const balanceBefore = Number((balanceAfter - Number(claimedTx.amount)).toFixed(2));
-
-    claimedTx.balanceBefore = balanceBefore;
-    claimedTx.balanceAfter = balanceAfter;
-    await claimedTx.save();
 
     const io = req.app.get('io');
-    if (io) {
-        const event = {
-            userId: user.userId,
-            walletBalance: balanceAfter,
-            amount: claimedTx.amount,
-            type: 'Credit',
-            txnId: claimedTx.referenceNumber,
-            status: 'Success'
-        };
-        io.emit('wallet_balance_updated', event);
-        io.emit('payment_success', event);
+    if (io && walletEvent) {
+        io.emit('wallet_balance_updated', walletEvent);
+        io.emit('payment_success', walletEvent);
     }
 
-    return {
-        success: true,
-        status: 'Success',
-        message: `Payment verified. ₹${Number(claimedTx.amount).toFixed(2)} credited to your wallet.`,
-        walletBalance: balanceAfter,
-        amount: claimedTx.amount
-    };
+    return result;
 };
 
 const checkTransactionStatus = async (req, res, txnId, txnDate) => {
@@ -145,12 +149,21 @@ const checkTransactionStatus = async (req, res, txnId, txnDate) => {
             return res.status(404).json({ success: false, message: 'QR payment transaction not found.' });
         }
 
-        if (tx.status === 'Success' || tx.status === 'Failed') {
+        if (tx.status === 'Success') {
             const user = await User.findOne({ userId: tx.userId });
+            const recordedCredit = Number(tx.balanceAfter) - Number(tx.balanceBefore);
+            if (Math.abs(recordedCredit - Number(tx.amount)) < 0.005) {
+                return res.json({
+                    success: true,
+                    status: 'Success',
+                    walletBalance: user ? user.walletBalance : tx.balanceAfter,
+                    amount: tx.amount
+                });
+            }
+        } else if (tx.status === 'Failed') {
             return res.json({
-                success: tx.status === 'Success',
-                status: tx.status,
-                walletBalance: user ? user.walletBalance : tx.balanceAfter,
+                success: false,
+                status: 'Failed',
                 amount: tx.amount
             });
         }
@@ -296,6 +309,51 @@ router.post('/initiate', async (req, res) => {
 router.get('/check-status/:txnId', (req, res) =>
     checkTransactionStatus(req, res, req.params.txnId)
 );
+
+router.post('/reconcile/:userId', async (req, res) => {
+    try {
+        const user = await User.findOne({ userId: req.params.userId });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Wallet user not found.' });
+        }
+
+        const successfulQrTransactions = await WalletTransaction.find({
+            userId: user.userId,
+            paymentGateway: 'EkQR',
+            status: 'Success'
+        }).sort({ createdAt: -1 }).limit(20);
+
+        let reconciledCount = 0;
+        for (const tx of successfulQrTransactions) {
+            const recordedCredit = Number(tx.balanceAfter) - Number(tx.balanceBefore);
+            if (Math.abs(recordedCredit - Number(tx.amount)) < 0.005) continue;
+
+            const providerResponse = await queryOrderStatus(tx);
+            const providerData = providerResponse && providerResponse.data;
+            if (
+                providerResponse &&
+                providerResponse.status === true &&
+                String(providerData && providerData.status).toLowerCase() === 'success'
+            ) {
+                const result = await creditVerifiedOrder(req, tx, providerData);
+                if (result.success && result.status === 'Success') reconciledCount += 1;
+            }
+        }
+
+        const updatedUser = await User.findOne({ userId: user.userId });
+        return res.json({
+            success: true,
+            walletBalance: Number(updatedUser.walletBalance || 0),
+            reconciledCount
+        });
+    } catch (error) {
+        console.error('[EkQR wallet reconciliation] Error:', error.message);
+        return res.status(error.statusCode || 502).json({
+            success: false,
+            message: error.statusCode ? error.message : 'Unable to reconcile verified QR payments.'
+        });
+    }
+});
 
 router.post('/callback', async (req, res) => {
     const payload = { ...(req.query || {}), ...(req.body || {}) };
