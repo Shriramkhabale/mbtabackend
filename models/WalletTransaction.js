@@ -10,7 +10,10 @@ const walletTransactionSchema = new mongoose.Schema({
     referenceNumber: { type: String, required: true },
     status: { type: String, enum: ['Pending', 'Success', 'Failed'], default: 'Success' },
     paysprintTxnId: { type: String },
-    paysprintResponse: { type: mongoose.Schema.Types.Mixed }
+    paysprintResponse: { type: mongoose.Schema.Types.Mixed },
+    paymentGateway: { type: String },
+    gatewayTxnDate: { type: String },
+    gatewayTxnId: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('WalletTransaction', walletTransactionSchema);
