@@ -1,66 +1,55 @@
-const axios = require("axios");
-const qs = require("qs");
+'use strict';
+/**
+ * MB Mitra — Image to Text Converter (OCR)
+ * Fully local text extraction using EasyOCR and pytesseract fallback.
+ * No external API dependencies. No external data transmission.
+ */
 
-// Default configuration for Image to Text Converter Online API
-const IMAGE_TO_TEXT_API_URL = "https://api.dhboss.com/apicall/imagetotext/";
+const {
+  callImageToTextLocal,
+  extractTextLocal
+} = require('./localOcr');
+const { parseIncomingImage } = require('./toolHelpers');
 
 /**
- * Call Image to Text Converter Online API
- * @param {Object} options - API Parameters
- * @returns {Promise<Object>} API response data
+ * Call Image to Text AI (Local)
+ * @param {Object} options - { fileData, file_url, image_url, extraLangs }
+ * @returns {Promise<Object>} Extracted text
  */
 async function callImageToTextAi(options = {}) {
   const {
-    task_id,
+    fileData,
     file_url,
     image_url,
-    apikeyfill = process.env.DHBOSS_IMAGE_TO_TEXT_API_KEY || "",
-    ...rest
+    extraLangs,
+    extra_langs
   } = options;
 
-  // Prepare data
-  const data = qs.stringify({
-    ...(task_id ? { task_id } : {}),
-    ...((file_url || image_url) ? { file_url: file_url || image_url, image_url: file_url || image_url } : {}),
-    ...(apikeyfill ? { apikeyfill } : {}),
-    ...rest
-  });
-
-  // API call
-  try {
-    const res = await axios.post(IMAGE_TO_TEXT_API_URL, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
-    });
-    console.log("Image to Text API Success:", res.data);
-    return res.data;
-  } catch (err) {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
+  const inputData = fileData || file_url || image_url;
+  if (!inputData) {
+    throw new Error('A file_url, image_url, or fileData is required for Image to Text');
   }
-}
 
-// Standalone test runner matching the provided snippet
-function runSampleApiRequest() {
-  const data = qs.stringify({});
+  const langs = extraLangs || extra_langs || '';
 
-  return axios.post("https://api.dhboss.com/apicall/imagetotext/", data, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    }
-  })
-  .then(res => {
-    console.log(res.data);
-    return res.data;
-  })
-  .catch(err => {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
-  });
+  if (typeof inputData === 'string' && (inputData.startsWith('data:') || !inputData.startsWith('http'))) {
+    return callImageToTextLocal({
+      fileData: inputData,
+      extraLangs: langs
+    });
+  }
+
+  const imageBuffer = await parseIncomingImage(inputData);
+  const text = await extractTextLocal(imageBuffer, { extraLangs: langs });
+  return {
+    success: true,
+    text,
+    extracted_text: text
+  };
 }
 
 module.exports = {
   callImageToTextAi,
-  runSampleApiRequest
+  callImageToTextLocal,
+  extractTextLocal
 };

@@ -48,6 +48,22 @@ const toolSchema = new mongoose.Schema({
     order: {
         type: Number,
         default: 0
+    },
+    usageCount: {
+        type: Number,
+        default: 0
+    },
+    successCount: {
+        type: Number,
+        default: 0
+    },
+    failureCount: {
+        type: Number,
+        default: 0
+    },
+    subTools: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
     }
 }, {
     timestamps: true
