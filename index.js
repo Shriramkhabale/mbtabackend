@@ -43,6 +43,7 @@ const quickLinkRoutes = require('./routes/quickLinkRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const offlineWorkRoutes = require('./routes/offlineWorkRoutes');
 const toolRoutes = require('./routes/toolRoutes');
+const pdfToolsRoutes = require('./routes/pdfToolsRoutes');
 
 // ETDS callback is public and intentionally registered before global CORS/body parsing.
 app.use('/api/etds', etdsRoutes);
@@ -51,8 +52,15 @@ app.use('/api/etds', etdsRoutes);
 app.use(cors());
 // Image tools submit base64 data URLs; a 20 MB image expands to roughly 27 MB in JSON.
 app.use(express.json({ limit: '32mb' }));
-app.use(express.urlencoded({ extended: true }));
-// Serve uploaded images statically
+// Restrict direct unauthenticated public access to temporary documents
+app.use('/uploads/temp', (req, res) => {
+    res.status(403).json({
+        success: false,
+        message: 'Direct public access to temporary documents is restricted for privacy. Please use the authenticated download route.'
+    });
+});
+
+// Serve uploaded public assets statically (banners, logos, avatars)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
@@ -75,6 +83,7 @@ app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/paysprint/onboard', paysprintOnboardRoutes);
 app.use('/api/quick-links', quickLinkRoutes);
 app.use('/api/tools', toolRoutes);
+app.use('/api/pdf-tools', pdfToolsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Direct PaySprint Live Webhook Callback Endpoint

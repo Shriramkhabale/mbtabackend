@@ -34,7 +34,6 @@ const DEFAULT_ALL_USER_PERMISSIONS = [
     'tools.panCutter',
     'tools.voterCutter',
     'tools.pdf2Html',
-    'tools.ayushmanCutter',
 
     // Dynamic Menus
     'dynamicMenus',

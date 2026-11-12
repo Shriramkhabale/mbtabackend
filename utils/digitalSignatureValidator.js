@@ -1,65 +1,44 @@
-const axios = require("axios");
-const qs = require("qs");
+'use strict';
+/**
+ * MB Mitra — Digital Signature PDF Validation AI Tool
+ * Fully local structural and cryptographic inspection of PDF digital signatures.
+ * No external API dependencies. No external data transmission.
+ */
 
-// Default configuration for Digital Signature PDF Validation AI Tool API
-const DIGITAL_SIGNATURE_VALIDATION_API_URL = "https://api.dhboss.com/apicall/digital_signature_validation_ai_v2_api/";
+const {
+  validatePdfDigitalSignatureLocal,
+  callDigitalSignatureValidatorLocal
+} = require('./localDigitalSignatureValidator');
+const { parseIncomingPdf } = require('./toolHelpers');
 
 /**
- * Call Digital Signature PDF Validation AI Tool API
- * @param {Object} options - API Parameters
- * @returns {Promise<Object>} API response data
+ * Call Digital Signature PDF Validation AI (Local)
+ * @param {Object} options - { fileData, file_url, fileName, password }
+ * @returns {Promise<Object>} Verification details
  */
-async function callDigitalSignatureValidationAi({
-  task_id = "ae6ad377-b91c-4f6d-bd5d-29d4f98f3744",
-  file_url = "https://example.com/digitalsignature.pdf",
-  apikeyfill = process.env.DHBOSS_DIGITAL_SIGNATURE_API_KEY || "AAyi7ZEO953rXd1GKQFcyjgWUq0BZIiaIzffVQduPN03Yrx3tATbONLU8RB8NIakW7XMP3"
-} = {}) {
-  // Prepare data
-  const data = qs.stringify({
-    task_id,
+async function callDigitalSignatureValidationAi(options = {}) {
+  const {
+    fileData,
     file_url,
-    apikeyfill
-  });
+    fileName = 'document.pdf',
+    password = '',
+    pdfPassword = ''
+  } = options;
 
-  // API call
-  try {
-    const res = await axios.post(DIGITAL_SIGNATURE_VALIDATION_API_URL, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
-    });
-    console.log("Digital Signature Validation API Success:", res.data);
-    return res.data;
-  } catch (err) {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
+  const inputData = fileData || file_url;
+  if (!inputData) {
+    throw new Error('file_url or fileData is required for Digital Signature PDF Validation');
   }
-}
 
-// Standalone test runner matching the provided snippet
-function runSampleApiRequest() {
-  const data = qs.stringify({
-    "task_id": "ae6ad377-b91c-4f6d-bd5d-29d4f98f3744",
-    "file_url": "https://example.com/digitalsignature.pdf",
-    "apikeyfill": process.env.DHBOSS_DIGITAL_SIGNATURE_API_KEY || "AAyi7ZEO953rXd1GKQFcyjgWUq0BZIiaIzffVQduPN03Yrx3tATbONLU8RB8NIakW7XMP3"
-  });
-
-  return axios.post("https://api.dhboss.com/apicall/digital_signature_validation_ai_v2_api/", data, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    }
-  })
-  .then(res => {
-    console.log(res.data);
-    return res.data;
-  })
-  .catch(err => {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
+  return callDigitalSignatureValidatorLocal({
+    fileData: inputData,
+    fileName,
+    password: password || pdfPassword
   });
 }
 
 module.exports = {
   callDigitalSignatureValidationAi,
-  runSampleApiRequest
+  callDigitalSignatureValidatorLocal,
+  validatePdfDigitalSignatureLocal
 };

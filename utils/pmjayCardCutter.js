@@ -1,70 +1,181 @@
-const axios = require("axios");
-const qs = require("qs");
-
-// Default configuration for PMJAY Ayushman Card Cutter AI API
-const PMJAY_CARD_CUTTER_API_URL = "https://api.dhboss.com/apicall/pmjay_ayushman_card_cutter_ai_v2_api/";
+const { PDFDocument } = require('pdf-lib');
+const { PDFParse } = require('pdf-parse');
+const {
+  parseIncomingPdf,
+  saveTempOutput,
+  resolveOutputDimensions,
+  generateA4CardGridLayout,
+  detectCardPdfBoxes,
+  CR80_WIDTH_PT,
+  CR80_HEIGHT_PT,
+  A4_WIDTH_PT,
+  A4_HEIGHT_PT
+} = require('./toolHelpers');
 
 /**
- * Call PMJAY Ayushman Card Cutter AI API
- * @param {Object} options - API Parameters
- * @returns {Promise<Object>} API response data
+ * Local PMJAY Ayushman Card PDF Cutter
+ * Extracts Front and Back of the PMJAY Golden card from Ayushman Bharat PDF
+ * without calling any external paid APIs.
+ *
+ * @param {Object} options
+ * @returns {Promise<Object>}
  */
-async function callPmjayCardCutterAi({
-  task_id = "ae6ad377-b91c-4f6d-bd5d-29d4f98f3744",
-  file_url = "https://example.com/pmjaycard.pdf",
-  quality = "high",
-  apikeyfill = process.env.DHBOSS_PMJAY_CARD_CUTTER_API_KEY || "AAyi7ZEO953rXd1GKQFcyjgWUq0BZIiaIzffVQduPN03Yrx3tATbONLU8RB8NIakW7XMP3",
-  ...rest
-} = {}) {
-  // Prepare data
-  const data = qs.stringify({
-    task_id,
+async function callPmjayCardCutterAi(options = {}) {
+  const {
     file_url,
-    quality,
-    apikeyfill,
+    fileData,
+    password = '',
+    pdfPassword = '',
+    userId = 'retailer',
+    quality = 'high',
+    cropBox,
+    settings,
     ...rest
-  });
+  } = options;
 
-  // API call
+  // 1. Obtain and validate PDF buffer locally (decrypting if password-protected)
+  const docPassword = password || pdfPassword;
+  const pdfBuffer = await parseIncomingPdf(fileData, file_url, docPassword);
+
+  // 2. Inspect text content to verify PMJAY
+  let isPmjayDoc = false;
   try {
-    const res = await axios.post(PMJAY_CARD_CUTTER_API_URL, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
-    });
-    console.log("PMJAY Ayushman Card Cutter API Success:", res.data);
-    return res.data;
-  } catch (err) {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
-  }
-}
-
-// Standalone test runner matching the provided snippet
-function runSampleApiRequest() {
-  const data = qs.stringify({
-    "task_id": "ae6ad377-b91c-4f6d-bd5d-29d4f98f3744",
-    "file_url": "https://example.com/pmjaycard.pdf",
-    "quality": "high",
-    "apikeyfill": process.env.DHBOSS_PMJAY_CARD_CUTTER_API_KEY || "AAyi7ZEO953rXd1GKQFcyjgWUq0BZIiaIzffVQduPN03Yrx3tATbONLU8RB8NIakW7XMP3"
-  });
-
-  return axios.post("https://api.dhboss.com/apicall/pmjay_ayushman_card_cutter_ai_v2_api/", data, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
+    const parser = new PDFParse({ data: pdfBuffer });
+    const parsedText = await parser.getText();
+    const textSample = parsedText?.text || '';
+    if (
+      /pradhan mantri jan arogya|pmjay|pm-jay|ayushman bharat|आयुष्मान भारत|national health authority/i.test(textSample) ||
+      /\bAB-PMJAY\b/i.test(textSample)
+    ) {
+      isPmjayDoc = true;
     }
-  })
-  .then(res => {
-    console.log(res.data);
-    return res.data;
-  })
-  .catch(err => {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
-  });
+    await parser.destroy();
+  } catch (err) {
+    // Non-fatal text inspection error
+  }
+
+  // 3. Load PDF with pdf-lib
+  let srcDoc;
+  try {
+    srcDoc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
+  } catch (err) {
+    if (err.message && err.message.toLowerCase().includes('password')) {
+      throw new Error('This PMJAY PDF is password-protected. Please upload an unlocked/decrypted PDF.');
+    }
+    throw new Error(`Failed to read PDF document: ${err.message}`);
+  }
+
+  const pageCount = srcDoc.getPageCount();
+  if (pageCount === 0) {
+    throw new Error('The uploaded PDF does not contain any pages.');
+  }
+
+  const srcPage = srcDoc.getPage(0);
+  const srcWidth = srcPage.getWidth();
+  const srcHeight = srcPage.getHeight();
+
+  const scaleX = srcWidth / A4_WIDTH_PT;
+  const scaleY = srcHeight / A4_HEIGHT_PT;
+
+  // 4. Crop coordinates
+  let frontBox;
+  let backBox;
+
+  if (cropBox && typeof cropBox === 'object') {
+    frontBox = {
+      left: parseFloat(cropBox.left || cropBox.x || 0),
+      bottom: parseFloat(cropBox.bottom || cropBox.y || 0),
+      right: parseFloat(cropBox.right || (cropBox.x + cropBox.width) || srcWidth),
+      top: parseFloat(cropBox.top || (cropBox.y + cropBox.height) || srcHeight)
+    };
+  } else {
+    // Official PMJAY Ayushman Bharat standard layout:
+    // ISO/IEC 7810 ID-1 standard: 85.6 mm x 54.0 mm
+    const detected = await detectCardPdfBoxes(pdfBuffer, 'pmjay', srcWidth, srcHeight);
+    frontBox = detected.frontBox;
+    backBox = detected.backBox;
+  }
+
+  // 5. Build output PDF using dynamic resolved settings
+  const resolvedDim = resolveOutputDimensions(settings, options.preset || rest.preset || 'pmjay');
+  const cardWidthPt = resolvedDim.widthPt;
+  const cardHeightPt = resolvedDim.heightPt;
+  const destDoc = await PDFDocument.create();
+  const embeddedFront = await destDoc.embedPage(srcPage, frontBox);
+  const embeddedBack = backBox ? await destDoc.embedPage(srcPage, backBox) : null;
+
+  if (resolvedDim.isA4Grid) {
+    await generateA4CardGridLayout(destDoc, embeddedFront, embeddedBack, cardWidthPt, cardHeightPt);
+  } else {
+    // Page 1: Front
+    const pageFront = destDoc.addPage([cardWidthPt, cardHeightPt]);
+    pageFront.drawPage(embeddedFront, {
+      x: 0,
+      y: 0,
+      width: cardWidthPt,
+      height: cardHeightPt
+    });
+
+    if (embeddedBack) {
+      // Page 2: Back
+      const pageBack = destDoc.addPage([cardWidthPt, cardHeightPt]);
+      pageBack.drawPage(embeddedBack, {
+        x: 0,
+        y: 0,
+        width: cardWidthPt,
+        height: cardHeightPt
+      });
+
+      // Page 3: Side-by-side print sheet
+      const sheetWidth = cardWidthPt * 2 + 30;
+      const sheetHeight = cardHeightPt + 20;
+      const printPage = destDoc.addPage([sheetWidth, sheetHeight]);
+
+      printPage.drawPage(embeddedFront, {
+        x: 10,
+        y: 10,
+        width: cardWidthPt,
+        height: cardHeightPt
+      });
+
+      printPage.drawPage(embeddedBack, {
+        x: cardWidthPt + 20,
+        y: 10,
+        width: cardWidthPt,
+        height: cardHeightPt
+      });
+    }
+  }
+
+  // 6. Save output PDF
+  const outputPdfBytes = await destDoc.save();
+  const tempFile = saveTempOutput(outputPdfBytes, 'pdf', 'pmjay_ayushman_cutter', userId);
+
+  return {
+    status: 'Success',
+    code: 200,
+    message: 'PMJAY Ayushman Bharat Card PDF cropped successfully into high-resolution printable cards.',
+    file_url: tempFile.fileUrl,
+    download_url: tempFile.fileUrl,
+    output_url: tempFile.fileUrl,
+    outputFileName: tempFile.fileName,
+    dimensions: {
+      widthMm: resolvedDim.widthMm,
+      heightMm: resolvedDim.heightMm,
+      dpi: resolvedDim.dpi,
+      widthPx: resolvedDim.widthPx,
+      heightPx: resolvedDim.heightPx,
+      pageCount: destDoc.getPageCount()
+    },
+    detection: {
+      isPmjayDoc,
+      frontBox,
+      backBox,
+      pageCount
+    }
+  };
 }
 
 module.exports = {
-  callPmjayCardCutterAi,
-  runSampleApiRequest
+  callPmjayCardCutterAi
 };

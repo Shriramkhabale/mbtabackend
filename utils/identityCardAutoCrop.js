@@ -1,67 +1,52 @@
-const axios = require("axios");
-const qs = require("qs");
+'use strict';
+/**
+ * MB Mitra — All Identity Card Automatic Cropping Tools
+ * Fully local contour and edge detection using OpenCV.
+ * No external API dependencies. No external data transmission.
+ */
 
-// Default configuration for ALL IDENTITY CARD AUTOMATIC CROPPING TOOLS API
-const IDENTITY_CARD_AUTO_CROP_API_URL = "https://api.dhboss.com/apicall/identity_card_auto_cropping_tools_api/";
+const {
+  callIdentityCardAutoCropLocal,
+  cropCardLocal
+} = require('./localAutoCrop');
+const { parseIncomingImage } = require('./toolHelpers');
 
 /**
- * Call ALL IDENTITY CARD AUTOMATIC CROPPING TOOLS API
- * @param {Object} options - API Parameters
- * @returns {Promise<Object>} API response data
+ * Call Identity Card Auto Crop AI (Local)
+ * @param {Object} options - { fileData, file_url, croptype, cropType, userId }
+ * @returns {Promise<Object>} Cropped result
  */
-async function callIdentityCardAutoCropAi({
-  croptype = "aadhaar",
-  file_url = "https://example.com/idcardpdf.pdf",
-  apikeyfill = process.env.DHBOSS_IDENTITY_AUTO_CROP_API_KEY || "AAyi7ZEO953rXd1GKQFcyjgWUq0BZIiaIzffVQduPN03Yrx3tATbONLU8RB8NIakW7XMP3",
-  ...rest
-} = {}) {
-  // Prepare data
-  const data = qs.stringify({
-    croptype,
+async function callIdentityCardAutoCropAi(options = {}) {
+  const {
+    fileData,
     file_url,
-    apikeyfill,
+    croptype,
+    cropType,
+    userId = 'retailer',
     ...rest
-  });
+  } = options;
 
-  // API call
-  try {
-    const res = await axios.post(IDENTITY_CARD_AUTO_CROP_API_URL, data, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
-    });
-    console.log("Identity Card Auto Crop API Success:", res.data);
-    return res.data;
-  } catch (err) {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
+  const inputData = fileData || file_url;
+  if (!inputData) {
+    throw new Error('file_url or fileData is required for Identity Card Auto Crop');
   }
-}
 
-// Standalone test runner matching the provided snippet
-function runSampleApiRequest() {
-  const data = qs.stringify({
-    "croptype": "aadhaar",
-    "file_url": "https://example.com/idcardpdf.pdf",
-    "apikeyfill": process.env.DHBOSS_IDENTITY_AUTO_CROP_API_KEY || "AAyi7ZEO953rXd1GKQFcyjgWUq0BZIiaIzffVQduPN03Yrx3tATbONLU8RB8NIakW7XMP3"
-  });
+  const selectedCropType = croptype || cropType || 'generic';
 
-  return axios.post("https://api.dhboss.com/apicall/identity_card_auto_cropping_tools_api/", data, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    }
-  })
-  .then(res => {
-    console.log(res.data);
-    return res.data;
-  })
-  .catch(err => {
-    console.error("API Error:", err.response?.data || err.message);
-    throw err;
-  });
+  if (typeof inputData === 'string' && (inputData.startsWith('data:') || !inputData.startsWith('http'))) {
+    return callIdentityCardAutoCropLocal({
+      fileData: inputData,
+      croptype: selectedCropType,
+      userId
+    });
+  }
+
+  const imageBuffer = await parseIncomingImage(inputData);
+  return cropCardLocal(imageBuffer, { cropType: selectedCropType }, userId);
 }
 
 module.exports = {
   callIdentityCardAutoCropAi,
-  runSampleApiRequest
+  callIdentityCardAutoCropLocal,
+  cropCardLocal
 };
