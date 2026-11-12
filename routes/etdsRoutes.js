@@ -199,8 +199,8 @@ const getProviderTextFields = (payload) => {
 const safeStatusFromPayload = (payload) => {
   const values = getProviderStatusFields(payload)
     .map(({ value }) => value.toLowerCase().replace(/[\s_-]/g, ''));
-  if (values.some(value => ['success', 'successful', 'completed', 'approved', '200'].includes(value))) return 'success';
-  if (values.some(value => ['failed', 'failure', 'rejected', 'error', '405'].includes(value))) return 'failed';
+  if (values.some(value => ['success', 'successful', 'completed', 'approved', '200', '3'].includes(value))) return 'success';
+  if (values.some(value => ['failed', 'failure', 'rejected', 'error', '405', '0'].includes(value))) return 'failed';
   if (values.some(value => ['pending', 'inprogress', 'processing'].includes(value))) return 'pending';
   const textFields = getProviderTextFields(payload);
   const hasErrorCode = textFields.some(({ key, value }) =>
