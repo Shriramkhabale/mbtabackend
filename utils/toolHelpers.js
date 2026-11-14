@@ -20,7 +20,8 @@ function ensureTempDir() {
  * Priority order:
  *  1. process.env.PYTHON_BIN (if explicitly configured)
  *  2. Active Virtual Environment interpreter (VIRTUAL_ENV)
- *  3. Platform default: 'python' on Windows dev, 'python3' on Linux production
+ *  3. Project-local .venv/venv interpreter
+ *  4. Platform default: 'python' on Windows dev, 'python3' on Linux production
  */
 function getPythonExecutable() {
   if (process.env.PYTHON_BIN && process.env.PYTHON_BIN.trim()) {
@@ -32,6 +33,14 @@ function getPythonExecutable() {
       : path.join(process.env.VIRTUAL_ENV, 'bin', 'python3');
     if (fs.existsSync(venvBin)) {
       return venvBin;
+    }
+  }
+  const backendDir = path.resolve(__dirname, '..');
+  const venvInterpreter = process.platform === 'win32' ? 'Scripts\\python.exe' : 'bin/python3';
+  for (const venvName of ['.venv', 'venv']) {
+    const localPython = path.join(backendDir, venvName, venvInterpreter);
+    if (fs.existsSync(localPython)) {
+      return localPython;
     }
   }
   return process.platform === 'win32' ? 'python' : 'python3';

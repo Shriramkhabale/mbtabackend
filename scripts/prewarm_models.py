@@ -3,7 +3,7 @@
 Pre-warm / Pre-download AI Models for MB Mitra Document & AI Tools.
 This script downloads required model weights for:
   1. rembg (u2netp background removal model, ~4.7 MB or u2net ~176 MB)
-  2. easyocr (CRAFT text detection ~49 MB, English recognition ~4.5 MB)
+  2. easyocr (CRAFT text detection and English/Hindi recognition models)
 
 Run this during VPS deployment provisioning so first-time tool execution
 does not experience cold-start network latency or timeouts.
@@ -49,9 +49,9 @@ def prewarm_easyocr():
     print_header("2/2 Pre-warming EasyOCR (Text Detection & Recognition Models)")
     try:
         import easyocr
-        print("[*] Initializing EasyOCR reader for languages: ['en'] (CPU mode)...")
+        print("[*] Initializing EasyOCR reader for languages: ['en', 'hi'] (CPU mode)...")
         start_t = time.time()
-        reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+        reader = easyocr.Reader(['en', 'hi'], gpu=False, verbose=False)
         elapsed = time.time() - start_t
         
         easyocr_home = os.path.expanduser(os.environ.get("EASYOCR_MODULE_PATH", "~/.EasyOCR"))
