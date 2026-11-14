@@ -33,7 +33,8 @@ Update package repositories and install required system tools, Python build depe
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl wget git build-essential \
     python3 python3-pip python3-venv python3-dev \
-    libglib2.0-0 libsm6 libxext6 libxrender-dev
+    libglib2.0-0 libsm6 libxext6 libxrender-dev \
+    tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin
 ```
 
 #### Node.js LTS (v20) Installation
@@ -57,8 +58,8 @@ sudo npm install -g pm2
    ```bash
    python3 -m venv venv
    source venv/bin/activate
-   pip install --upgrade pip setuptools wheel
-   pip install -r requirements.txt
+   python -m pip install --upgrade pip setuptools wheel
+   python -m pip install -r requirements.txt
    ```
    *Note: `requirements.txt` specifies `opencv-python-headless` which avoids missing X11/GUI libraries on headless Linux.*
 
@@ -70,7 +71,7 @@ sudo npm install -g pm2
    This downloads:
    - `u2netp` model to `~/.u2net/u2netp.onnx` (~4.7 MB)
    - EasyOCR CRAFT detection model to `~/.EasyOCR/model/craft_mlt_25k.pth` (~49 MB)
-   - EasyOCR English recognition model to `~/.EasyOCR/model/english_g2.pth` (~4.5 MB)
+   - EasyOCR English and Hindi recognition models used by the Image to Text tool
 
 4. **Configure Environment Variables (`backend/.env`):**
    ```env
@@ -178,6 +179,7 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 
 After deployment, verify that:
 1. Backend health check returns 200 OK: `curl http://localhost:5000/api/tools/categories`
-2. Python worker executes correctly: `/var/www/mb-mitra/backend/venv/bin/python3 -c "import cv2, easyocr, rembg; print('OK')"`
-3. Document generation and tokenized downloads function over HTTPS without mixed-content warnings.
+2. Python document and AI dependencies execute correctly: `/var/www/mb-mitra/backend/venv/bin/python3 -c "import cv2, easyocr, fitz, openpyxl, PIL, pytesseract, docx, reportlab, pdf2docx, rembg; print('OK')"`
+3. Tesseract is installed with the required language packs: `tesseract --list-langs` should include `eng` and `hin`.
+4. Document generation and tokenized downloads function over HTTPS without mixed-content warnings.
 

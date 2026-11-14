@@ -8,6 +8,7 @@ const Tool = require('../models/Tool');
 const User = require('../models/User');
 const WalletTransaction = require('../models/WalletTransaction');
 const { verifySessionToken } = require('../utils/sessionToken');
+const { getPythonExecutable } = require('../utils/toolHelpers');
 
 // Ensure isolated temp directory for PDF tools processing
 const TEMP_DIR = path.join(__dirname, '..', 'uploads', 'pdf_tools_temp');
@@ -62,7 +63,7 @@ function runPdfEngine(operation, filePaths, outputPath, options = {}) {
     fs.writeFileSync(payloadFile, JSON.stringify(payload, null, 2), 'utf8');
 
     // Run python with UTF-8 encoding
-    const py = spawn('python', [ENGINE_PATH, payloadFile], {
+    const py = spawn(getPythonExecutable(), [ENGINE_PATH, payloadFile], {
       env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
     });
 
