@@ -67,7 +67,48 @@ router.get('/:userId', async (req, res) => {
         }
 
         const user = await User.findOne({ $or: orConditions });
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) {
+            // Check if queryTerm is an Employee UID or mobile
+            const Employee = require('../models/Employee');
+            const employee = await Employee.findOne({
+                $or: [
+                    { employeeUid: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+                    { mobileNumber: queryTerm },
+                    { mobileNumber: cleanMobile }
+                ]
+            });
+
+            if (employee) {
+                const parentRetailer = await User.findOne({
+                    $or: [{ userId: employee.retailerId }, { retailerId: employee.retailerId }]
+                });
+
+                const { sanitizeEmployeePermissions } = require('../utils/employeePermissions');
+                const effectivePermissions = sanitizeEmployeePermissions(employee.permissions || [], parentRetailer);
+
+                const employeeUser = {
+                    _id: employee._id,
+                    userId: employee.employeeUid,
+                    employeeUid: employee.employeeUid,
+                    name: employee.fullName,
+                    fullName: employee.fullName,
+                    mobile: employee.mobileNumber,
+                    email: employee.email,
+                    role: 'employee',
+                    retailerId: employee.retailerId,
+                    permissions: effectivePermissions,
+                    designation: employee.designation,
+                    department: employee.department,
+                    parentShopName: parentRetailer ? parentRetailer.shopName : '',
+                    walletBalance: parentRetailer ? parentRetailer.walletBalance : 0,
+                    status: employee.status
+                };
+
+                return res.status(200).json(employeeUser);
+            }
+
+            return res.status(404).json({ message: 'User not found' });
+        }
         res.status(200).json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -188,8 +229,79 @@ router.post('/login', async (req, res) => {
 
         const user = await User.findOne({ $or: orConditions });
         
-        // If user not found, for development purpose we can auto-create the admin user if they type admin/Admin@1234
+        // If user not found, check Employee accounts or admin fallback
         if (!user) {
+            // Check if login identifier belongs to an Employee (Section 6: Independent Employee Login)
+            try {
+                const Employee = require('../models/Employee');
+                const employee = await Employee.findOne({
+                    $or: [
+                        { employeeUid: { $regex: new RegExp('^' + escapedQuery + '$', 'i') } },
+                        { mobileNumber: searchQuery },
+                        { mobileNumber: cleanMobile }
+                    ]
+                });
+
+                if (employee) {
+                    if (employee.password !== password) {
+                        return res.status(401).json({ message: 'Invalid Employee UID / Mobile or Password' });
+                    }
+                    if (employee.status === 'Inactive' || employee.loginEnabled === false) {
+                        return res.status(403).json({ message: 'Your employee account is deactivated by the retailer.' });
+                    }
+
+                    // Check parent retailer
+                    const parentRetailer = await User.findOne({
+                        $or: [{ userId: employee.retailerId }, { retailerId: employee.retailerId }]
+                    });
+
+                    if (parentRetailer && parentRetailer.status === 'Rejected') {
+                        return res.status(403).json({ message: 'Parent retailer account is suspended.' });
+                    }
+
+                    const { sanitizeEmployeePermissions } = require('../utils/employeePermissions');
+                    const effectivePermissions = sanitizeEmployeePermissions(employee.permissions, parentRetailer);
+
+                    employee.lastLoginAt = new Date();
+                    await employee.save();
+
+                    const { logEmployeeActivity } = require('../models/EmployeeActivity');
+                    await logEmployeeActivity({
+                        employeeUid: employee.employeeUid,
+                        employeeName: employee.fullName,
+                        retailerId: employee.retailerId,
+                        serviceName: 'Authentication',
+                        moduleName: 'Employee Login',
+                        action: 'Employee Login via Main Form',
+                        status: 'Success'
+                    });
+
+                    const employeeUser = {
+                        _id: employee._id,
+                        userId: employee.employeeUid,
+                        employeeUid: employee.employeeUid,
+                        name: employee.fullName,
+                        fullName: employee.fullName,
+                        mobile: employee.mobileNumber,
+                        email: employee.email,
+                        role: 'employee',
+                        retailerId: employee.retailerId,
+                        permissions: effectivePermissions,
+                        designation: employee.designation,
+                        department: employee.department,
+                        parentShopName: parentRetailer ? parentRetailer.shopName : '',
+                        walletBalance: parentRetailer ? parentRetailer.walletBalance : 0
+                    };
+
+                    return res.status(200).json({
+                        message: 'Employee login successful',
+                        user: employeeUser
+                    });
+                }
+            } catch (empErr) {
+                console.error('Error during employee login fallback:', empErr);
+            }
+
             if (userId === 'admin' && password === 'Admin@1234') {
                 const adminUser = new User({ userId: 'admin', email: 'admin@mbmitra.com', password: 'Admin@1234' });
                 await adminUser.save();
@@ -242,9 +354,12 @@ router.post('/admin-verify', async (req, res) => {
 
         // Strictly validate mbtravels08@gmail.com and 123456
         if (query === 'mbtravels08@gmail.com' && password === '123456') {
+            const adminToken = createSessionToken({ userId: 'admin', role: 'admin' });
             return res.status(200).json({
                 success: true,
                 message: 'Admin credentials verified. Proceed to 2FA.',
+                token: adminToken,
+                sessionToken: adminToken,
                 user: {
                     email: 'mbtravels08@gmail.com',
                     userId: 'admin',
@@ -345,6 +460,37 @@ router.post('/verify-otp', async (req, res) => {
             const queryMobile = (mobile || '').trim();
             const cleanMobile = queryMobile.replace(/^\+91/, '').replace(/^0/, '');
             user = await User.findOne({ $or: [{ mobile: queryMobile }, { mobile: cleanMobile }] });
+            if (!user) {
+                const Employee = require('../models/Employee');
+                const employee = await Employee.findOne({
+                    $or: [{ mobileNumber: queryMobile }, { mobileNumber: cleanMobile }]
+                });
+                if (employee) {
+                    const parentRetailer = await User.findOne({
+                        $or: [{ userId: employee.retailerId }, { retailerId: employee.retailerId }]
+                    });
+                    const { sanitizeEmployeePermissions } = require('../utils/employeePermissions');
+                    const effectivePermissions = sanitizeEmployeePermissions(employee.permissions || [], parentRetailer);
+
+                    user = {
+                        _id: employee._id,
+                        userId: employee.employeeUid,
+                        employeeUid: employee.employeeUid,
+                        name: employee.fullName,
+                        fullName: employee.fullName,
+                        mobile: employee.mobileNumber,
+                        email: employee.email,
+                        role: 'employee',
+                        retailerId: employee.retailerId,
+                        permissions: effectivePermissions,
+                        designation: employee.designation,
+                        department: employee.department,
+                        parentShopName: parentRetailer ? parentRetailer.shopName : '',
+                        walletBalance: parentRetailer ? parentRetailer.walletBalance : 0,
+                        status: employee.status
+                    };
+                }
+            }
         } catch (error) {
             console.error('Error loading user after OTP verification:', error.message);
             return res.status(500).json({ success: false, message: 'Could not complete login.' });
@@ -355,15 +501,13 @@ router.post('/verify-otp', async (req, res) => {
         if (loginChallenge && loginChallenge.expiresAt <= Date.now()) {
             retailerLoginChallenges.delete(cleanMobile);
         }
-        // Issue a session token for approved retailers — verified OTP is sufficient proof.
-        // The loginChallenge is used as an extra check when available, but we always
-        // issue the token to avoid losing the session after a server restart.
-        if (user && user.role === 'retailer' && user.status === 'Approved') {
+        // Issue a session token for approved retailers or active employees
+        if (user && ((user.role === 'retailer' && user.status === 'Approved') || (user.role === 'employee' && user.status === 'Active'))) {
             try {
                 response.sessionToken = createSessionToken(user);
                 retailerLoginChallenges.delete(cleanMobile);
             } catch (error) {
-                console.error('Could not create retailer session:', error.message);
+                console.error('Could not create session token:', error.message);
                 return res.status(500).json({ success: false, message: 'Could not complete login.' });
             }
         }
