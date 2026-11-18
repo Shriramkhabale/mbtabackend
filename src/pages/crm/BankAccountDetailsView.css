@@ -1,0 +1,1304 @@
+/* ==========================================================================
+   BANK ACCOUNT DETAILS VIEW - STYLING
+   ========================================================================== */
+
+.crm-bank-container {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 18px 22px 80px;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: crmFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.45) transparent;
+}
+
+.crm-bank-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.crm-bank-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crm-bank-container::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.35);
+  border-radius: 99px;
+}
+
+.crm-bank-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.65);
+}
+
+/* Header Banner */
+.crm-bank-header-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
+  border: 1.5px solid #a7f3d0;
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+}
+
+.crm-bank-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crm-bank-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #065f46;
+  border: 1.5px solid #a7f3d0;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08);
+}
+
+.crm-bank-back-btn:hover {
+  background: #065f46;
+  color: #ffffff;
+  border-color: #065f46;
+  transform: translateX(-2px);
+}
+
+.crm-bank-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.crm-bank-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.35);
+  flex-shrink: 0;
+}
+
+.crm-bank-title-wrap h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #064e3b;
+  letter-spacing: -0.3px;
+}
+
+.crm-bank-title-wrap p {
+  margin: 4px 0 0 0;
+  font-size: 13.5px;
+  color: #047857;
+  font-weight: 500;
+}
+
+.crm-bank-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.crm-bank-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.crm-bank-btn-primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+}
+
+.crm-bank-btn-primary:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+}
+
+.crm-bank-btn-secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #cbd5e1;
+}
+
+.crm-bank-btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* KPI Grid */
+.crm-bank-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.crm-bank-kpi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.crm-bank-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.crm-bank-kpi-card .kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.crm-bank-kpi-card.card-blue .kpi-icon {
+  background: #e0f2fe;
+}
+
+.crm-bank-kpi-card.card-emerald .kpi-icon {
+  background: #d1fae5;
+}
+
+.crm-bank-kpi-card.card-purple .kpi-icon {
+  background: #f3e8ff;
+}
+
+.crm-bank-kpi-card .kpi-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-bank-kpi-card .kpi-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.crm-bank-kpi-card .kpi-value {
+  margin: 3px 0 2px 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.crm-bank-kpi-card .kpi-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Toolbar & Search */
+.crm-bank-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: #ffffff;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.crm-bank-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 8px 14px;
+  flex: 1;
+  max-width: 460px;
+}
+
+.crm-bank-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  width: 100%;
+  color: #0f172a;
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.crm-bank-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-chip.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+/* Bank Accounts Grid */
+.crm-bank-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.crm-bank-card-item {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1.5px solid #e2e8f0;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.crm-bank-card-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.crm-bank-card-item.is-default {
+  border-color: #38bdf8;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 40%);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.1);
+}
+
+.bank-default-badge {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.bank-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bank-name-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bank-logo-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+  flex-shrink: 0;
+}
+
+.bank-name-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.bank-nickname-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-top: 2px;
+  margin-right: 6px;
+}
+
+.bank-type-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.bank-set-default-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bank-set-default-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+/* Details Section */
+.bank-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.detail-label {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.detail-val {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.holder-val {
+  color: #0f172a;
+  max-width: 200px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acc-num-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mono-val {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.ifsc-val {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  color: #0369a1;
+  font-weight: 800;
+  background: #f0f9ff;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.upi-val {
+  color: #7c3aed;
+  font-weight: 700;
+}
+
+.copy-mini-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px 5px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copy-mini-btn:hover {
+  background: #e2e8f0;
+  transform: scale(1.05);
+}
+
+/* Card Footer Actions */
+.bank-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.bank-action-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-view {
+  color: #0284c7;
+  border-color: #bae6fd;
+  background: #f0f9ff;
+}
+
+.btn-view:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+.btn-edit {
+  color: #d97706;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.btn-edit:hover {
+  background: #d97706;
+  color: #ffffff;
+  border-color: #d97706;
+}
+
+.btn-delete {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+/* Empty / Loading State */
+.crm-bank-empty-state,
+.crm-bank-loading-state {
+  background: #ffffff;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 20px;
+  padding: 50px 20px;
+  text-align: center;
+  color: #64748b;
+  margin-top: 10px;
+}
+
+.empty-icon {
+  font-size: 44px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.crm-bank-empty-state h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.crm-bank-empty-state p {
+  margin: 6px auto 0 auto;
+  max-width: 440px;
+  font-size: 13.5px;
+}
+
+/* Modals */
+.crm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.crm-modal-card.bank-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 640px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: crmModalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-modal-card.bank-view-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 580px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: crmModalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes crmModalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.crm-modal-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1.5px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-icon {
+  font-size: 26px;
+}
+
+.crm-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.crm-modal-sub {
+  margin: 2px 0 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.crm-modal-close-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.crm-modal-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.crm-modal-body {
+  padding: 22px 24px;
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.req-star {
+  color: #ef4444;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13.5px;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.form-input.has-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.ifsc-input {
+  text-transform: uppercase;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+.error-text {
+  font-size: 11.5px;
+  color: #ef4444;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  accent-color: #0284c7;
+  cursor: pointer;
+}
+
+.crm-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 18px;
+  margin-top: 18px;
+  border-top: 1.5px solid #f1f5f9;
+}
+
+/* View Details Modal Grid */
+.view-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.view-detail-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.v-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.v-val-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reveal-toggle-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0284c7;
+  cursor: pointer;
+}
+
+.reveal-toggle-btn:hover {
+  background: #e0f2fe;
+}
+
+@media (max-width: 768px) {
+  .crm-bank-header-card {
+    padding: 18px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .view-details-grid {
+    grid-template-columns: 1fr;
+  }
+  .crm-bank-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Bank Form Fields Button --- */
+.crm-bank-btn-fields {
+  background: #ffffff;
+  color: #0284c7;
+  border: 1.5px solid #7dd3fc;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08);
+}
+
+.crm-bank-btn-fields:hover {
+  background: #f0f9ff;
+  border-color: #0284c7;
+  color: #0369a1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
+}
+
+/* --- Bank Form Fields Builder Modal & Table Styles --- */
+.crm-bank-fields-modal {
+  max-width: 960px !important;
+}
+
+.crm-bank-field-stats-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+}
+
+.crm-bank-field-dir-tag {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bank-field-count-pill {
+  background: #0284c7;
+  color: #ffffff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.crm-bank-field-stat-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.crm-bank-field-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.crm-bank-field-badge.green {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.crm-bank-field-badge.red {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.crm-bank-field-badge.gray {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+/* Field Builder Form Card */
+.crm-bank-field-builder-card {
+  background: #ffffff;
+  border: 1.5px dashed #38bdf8;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.crm-bank-field-builder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crm-bank-field-builder-header h4 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0369a1;
+}
+
+.crm-bank-editing-pill {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.crm-bank-field-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crm-bank-field-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.6fr 1.6fr 1fr;
+  gap: 12px;
+}
+
+.crm-bank-field-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.crm-bank-field-input-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.crm-bank-field-input-group input,
+.crm-bank-field-input-group select {
+  padding: 8px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background: #ffffff;
+}
+
+.crm-bank-field-input-group input:focus,
+.crm-bank-field-input-group select:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14);
+}
+
+.crm-bank-field-checks-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.crm-bank-field-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+}
+
+.crm-bank-field-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #0284c7;
+}
+
+.crm-bank-field-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.crm-bank-field-btn-submit {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crm-bank-field-btn-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3);
+}
+
+.crm-bank-field-btn-cancel {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crm-bank-field-btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+/* Configured Fields Table */
+.crm-bank-fields-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.crm-bank-fields-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crm-bank-fields-table-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.crm-bank-fields-table-sub {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.crm-bank-table-scroll {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.crm-bank-fields-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.crm-bank-fields-table thead th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  border: none;
+  white-space: nowrap;
+}
+
+.crm-bank-fields-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  background: #ffffff;
+}
+
+.crm-bank-fields-table tbody tr:hover td {
+  background: #fafaf9;
+}
+
+.crm-bank-fields-table tbody tr.row-hidden td {
+  background: #fcfcfc;
+  opacity: 0.85;
+}
+
+.crm-bank-order-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.crm-bank-order-num {
+  font-weight: 800;
+  color: #0284c7;
+  font-size: 12px;
+  min-width: 22px;
+}
+
+.crm-bank-order-arrows {
+  display: flex;
+  gap: 2px;
+}
+
+.crm-bank-arrow-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.crm-bank-arrow-btn:hover:not(:disabled) {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.crm-bank-arrow-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.crm-bank-field-label-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crm-bank-field-cell-icon {
+  font-size: 15px;
+}
+
+.crm-bank-field-cell-name {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.crm-bank-field-key-badge {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 11.5px;
+  color: #0369a1;
+}
+
+.crm-bank-field-type-pill {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.crm-bank-toggle-pill {
+  border: none;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: all 0.15s ease;
+}
+
+.crm-bank-toggle-pill:hover {
+  transform: scale(1.04);
+}
+
+.crm-bank-toggle-pill.pill-visible {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.crm-bank-toggle-pill.pill-hidden {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+}
+
+.crm-bank-toggle-pill.pill-required {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.crm-bank-toggle-pill.pill-optional {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.crm-bank-field-action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.crm-bank-field-edit-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crm-bank-field-edit-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.crm-bank-field-delete-btn {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crm-bank-field-delete-btn:hover {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+}
+
+@media (max-width: 900px) {
+  .crm-bank-field-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
