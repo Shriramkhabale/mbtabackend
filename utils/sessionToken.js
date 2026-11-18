@@ -26,7 +26,7 @@ const createSessionToken = (user) => {
   return `${unsignedToken}.${sign(unsignedToken, secret)}`;
 };
 
-const verifySessionToken = (token) => {
+const verifySessionToken = (token, allowedRoles = ['retailer']) => {
   const secret = process.env.JWT_KEY;
   if (!secret || typeof token !== 'string' || token.length > 4096) return null;
 
@@ -43,9 +43,10 @@ const verifySessionToken = (token) => {
     const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
     const now = Math.floor(Date.now() / 1000);
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
     if (header.alg !== 'HS256' || header.typ !== 'JWT' ||
         typeof payload.sub !== 'string' || !payload.sub ||
-        payload.role !== 'retailer' || !Number.isInteger(payload.exp) ||
+        !roles.includes(payload.role) || !Number.isInteger(payload.exp) ||
         payload.exp <= now) return null;
     return { userId: payload.sub, role: payload.role, expiresAt: payload.exp };
   } catch {
