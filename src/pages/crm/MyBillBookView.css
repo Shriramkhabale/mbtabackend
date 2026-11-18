@@ -1,0 +1,1723 @@
+/* ======================================================================
+   MBTA CRM — MY BILL BOOK (REVENUE MANAGEMENT MODULE) STYLES
+   ====================================================================== */
+
+.crm-billbook-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  animation: fadeIn 0.25s ease-out;
+  color: #1e293b;
+  font-family: inherit;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 6px 80px 4px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(234, 88, 12, 0.45) transparent;
+}
+
+.crm-billbook-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.crm-billbook-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crm-billbook-container::-webkit-scrollbar-thumb {
+  background: rgba(234, 88, 12, 0.35);
+  border-radius: 99px;
+}
+
+.crm-billbook-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 88, 12, 0.65);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 1. Header Banner */
+.crm-billbook-header-card {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%);
+  border: 1.5px solid #fed7aa;
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 20px rgba(234, 88, 12, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.crm-billbook-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.crm-billbook-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crm-billbook-back-btn {
+  background: #ffffff;
+  border: 1.5px solid #fdba74;
+  color: #c2410c;
+  padding: 7px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.crm-billbook-back-btn:hover {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+  transform: translateX(-2px);
+}
+
+.crm-billbook-tag {
+  background: #ea580c;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.crm-billbook-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crm-billbook-refresh-btn {
+  background: #ffffff;
+  border: 1.5px solid #fed7aa;
+  color: #9a3412;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.crm-billbook-refresh-btn:hover {
+  background: #ffedd5;
+  border-color: #ea580c;
+  color: #ea580c;
+}
+
+.crm-billbook-header-intro h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #9a3412;
+  margin: 0 0 6px;
+  letter-spacing: -0.3px;
+}
+
+.crm-billbook-header-intro p {
+  font-size: 13.5px;
+  color: #7c2d12;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 820px;
+}
+
+/* 2. Top 4 Revenue Cards Grid */
+.crm-revenue-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.crm-rev-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  border: 1.5px solid #fed7aa;
+}
+
+.crm-rev-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.crm-rev-card.card-emerald {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #ffffff 60%, #f0fdf4 100%);
+}
+.crm-rev-card.card-emerald .rev-card-value { color: #15803d; }
+.crm-rev-card.card-emerald .rev-card-badge {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.crm-rev-card.card-orange {
+  border-color: #fed7aa;
+  background: linear-gradient(135deg, #ffffff 60%, #fff7ed 100%);
+}
+.crm-rev-card.card-orange .rev-card-value { color: #ea580c; }
+.crm-rev-card.card-orange .rev-card-badge {
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.crm-rev-card.card-purple {
+  border-color: #ddd6fe;
+  background: linear-gradient(135deg, #ffffff 60%, #f5f3ff 100%);
+}
+.crm-rev-card.card-purple .rev-card-value { color: #7c3aed; }
+.crm-rev-card.card-purple .rev-card-badge {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.crm-rev-card.card-blue {
+  border-color: #bfdbfe;
+  background: linear-gradient(135deg, #ffffff 60%, #eff6ff 100%);
+}
+.crm-rev-card.card-blue .rev-card-value { color: #2563eb; }
+.crm-rev-card.card-blue .rev-card-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.rev-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rev-card-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.rev-card-icon {
+  font-size: 22px;
+}
+
+.rev-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rev-card-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.rev-card-value {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 2px 0 0;
+  letter-spacing: -0.4px;
+}
+
+.rev-card-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin: 2px 0 0;
+}
+
+/* 3. Navigation Tab Strip */
+.crm-billbook-tabs-strip {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #fed7aa;
+  padding-bottom: 1px;
+  flex-wrap: wrap;
+}
+
+.crm-billbook-tab-btn {
+  background: #ffffff;
+  border: 1.5px solid #fed7aa;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  padding: 11px 20px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  bottom: -2px;
+}
+
+.crm-billbook-tab-btn:hover {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.crm-billbook-tab-btn.active {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+  box-shadow: 0 -2px 8px rgba(234, 88, 12, 0.15);
+}
+
+.crm-billbook-tab-btn .tab-count-pill {
+  background: #fed7aa;
+  color: #9a3412;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.crm-billbook-tab-btn.active .tab-count-pill {
+  background: #ffffff;
+  color: #ea580c;
+}
+
+/* 4. Content Section Container */
+.crm-billbook-section {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 18px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Toolbar & Search */
+.crm-billbook-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.crm-billbook-search-box,
+.crm-bill-search-box {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
+  max-width: 480px;
+}
+
+.crm-billbook-search-box input,
+.crm-bill-search-box input {
+  width: 100%;
+  padding: 10px 36px 10px 38px;
+  border: 1.5px solid #fed7aa;
+  border-radius: 12px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.crm-billbook-search-box input:focus,
+.crm-bill-search-box input:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.search-clear-btn:hover { color: #dc2626; }
+
+.table-count-label {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Table Container & Base Table */
+.crm-billbook-table-container {
+  overflow-x: auto;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+}
+
+.crm-billbook-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+.crm-billbook-table thead th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  border: none;
+  white-space: nowrap;
+}
+
+.crm-billbook-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.crm-billbook-table tbody tr:hover td {
+  background: #fffaf5;
+}
+
+/* Cell typography & badges */
+.crm-uid-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-uid-badge {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #c2410c;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.crm-bill-num-badge {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.crm-copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.crm-copy-btn:hover { opacity: 1; transform: scale(1.15); }
+
+.crm-cust-name-text {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.crm-phone-text {
+  color: #475569;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.crm-works-pill {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.crm-bills-pill {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-block;
+}
+
+.crm-revenue-badge {
+  color: #15803d;
+  font-size: 14px;
+  font-weight: 800;
+  background: #f0fdf4;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.crm-date-text {
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.crm-work-desc-text {
+  color: #334155;
+  font-size: 12.5px;
+  display: inline-block;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crm-status-paid-pill {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-block;
+  letter-spacing: 0.3px;
+}
+
+/* Action Buttons */
+.crm-view-detail-btn {
+  background: #ffffff;
+  border: 1.5px solid #fed7aa;
+  color: #ea580c;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.crm-view-detail-btn:hover {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+  transform: translateY(-1px);
+}
+
+.crm-bill-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-btn-view-bill {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crm-btn-view-bill:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.crm-btn-dl-bill {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crm-btn-dl-bill:hover {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+/* ======================================================================
+   MONTHLY REVENUE ANALYSIS & CHART STYLES
+   ====================================================================== */
+
+.crm-monthly-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 12px 18px;
+  border-radius: 12px;
+}
+
+.crm-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crm-filter-group label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #7c2d12;
+}
+
+.crm-select-control {
+  padding: 6px 12px;
+  border: 1.5px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-family: inherit;
+  background: #ffffff;
+  color: #1e293b;
+  cursor: pointer;
+  outline: none;
+}
+
+.crm-select-control:focus {
+  border-color: #ea580c;
+}
+
+.crm-reset-filter-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crm-reset-filter-btn:hover { background: #e2e8f0; }
+
+/* Visual Chart Card */
+.crm-chart-card {
+  background: #ffffff;
+  border: 1.5px solid #fed7aa;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.crm-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.crm-chart-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crm-chart-icon { font-size: 22px; }
+
+.crm-chart-title-wrap h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #9a3412;
+}
+
+.crm-chart-title-wrap p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #7c2d12;
+}
+
+.crm-chart-summary-badge {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.crm-chart-empty {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+}
+
+.crm-chart-bars-container {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.crm-chart-bars-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  min-height: 220px;
+  padding: 30px 16px 10px;
+  min-width: 400px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.crm-chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 90px;
+  position: relative;
+}
+
+.crm-bar-label-top {
+  font-size: 11px;
+  font-weight: 800;
+  color: #15803d;
+  white-space: nowrap;
+}
+
+.crm-bar-track {
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 8px 8px 0 0;
+}
+
+.crm-bar-fill {
+  width: 36px;
+  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.crm-bar-fill:hover {
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+  transform: scaleY(1.03);
+}
+
+.crm-bar-fill:hover .crm-bar-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.crm-bar-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.2s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  line-height: 1.4;
+}
+
+.crm-bar-label-bottom {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.crm-month-title {
+  color: #9a3412;
+  font-weight: 800;
+}
+
+/* ======================================================================
+   TAB 3: ALL BILLS DIRECTORY STYLES
+   ====================================================================== */
+
+.crm-bill-filter-grid {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.crm-date-range-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-date-control {
+  padding: 6px 10px;
+  border: 1.5px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.crm-date-control:focus {
+  border-color: #ea580c;
+}
+
+.crm-billbook-results-summary {
+  font-size: 13px;
+  color: #475569;
+}
+
+/* ======================================================================
+   MODAL 1: CUSTOMER DETAILS & BILLING HISTORY STYLES
+   ====================================================================== */
+
+.crm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: overlayFade 0.2s ease-out;
+}
+
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.crm-modal-dialog {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: dialogScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-modal-dialog.wide {
+  max-width: 980px;
+}
+
+.crm-modal-dialog.preview-dialog {
+  max-width: 940px;
+  height: 85vh;
+}
+
+@keyframes dialogScale {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.crm-dialog-header {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-bottom: 1.5px solid #fed7aa;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crm-dialog-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.crm-dialog-icon {
+  font-size: 26px;
+  background: #ffffff;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fed7aa;
+}
+
+.crm-dialog-title-wrap h3 {
+  margin: 0;
+  color: #9a3412;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.crm-dialog-title-wrap p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: #7c2d12;
+}
+
+.crm-dialog-close {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #9a3412;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.crm-dialog-close:hover {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+}
+
+.crm-dialog-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.crm-dialog-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f8fafc;
+}
+
+.crm-btn-primary {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crm-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+}
+
+.crm-btn-secondary {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crm-btn-secondary:hover { background: #e2e8f0; }
+
+/* Customer Detail Card in Modal */
+.crm-cust-detail-card {
+  background: #fffaf5;
+  border: 1.5px solid #fed7aa;
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.crm-cust-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px dashed #fed7aa;
+  padding-bottom: 14px;
+}
+
+.cust-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cust-avatar-icon {
+  font-size: 32px;
+  background: #ffffff;
+  border: 1.5px solid #fed7aa;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cust-full-name {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.cust-uid-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.uid-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.uid-code {
+  background: #fed7aa;
+  color: #7c2d12;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.cust-revenue-hero {
+  text-align: right;
+  background: #ffffff;
+  border: 1.5px solid #bbf7d0;
+  padding: 10px 18px;
+  border-radius: 12px;
+}
+
+.hero-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #15803d;
+  text-transform: uppercase;
+}
+
+.hero-amount {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.hero-sub {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.crm-cust-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #7c2d12;
+}
+
+.meta-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* History Section in Modal */
+.crm-history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.crm-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.crm-history-header h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.crm-history-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.crm-table-scroll {
+  overflow-x: auto;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+}
+
+/* PDF Preview Modal */
+.crm-preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 540px;
+  border: none;
+}
+
+/* Spinner */
+.crm-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #fed7aa;
+  border-top-color: #ea580c;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+  .crm-revenue-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .crm-cust-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .crm-cust-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cust-revenue-hero {
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* ==========================================================================
+   FINANCIAL TRANSACTIONS & PROFIT/LOSS STYLES (NEW CRM EXPANSION)
+   ========================================================================== */
+
+/* Ledger Accounting Strip */
+.crm-ledger-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+}
+
+.ledger-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ledger-cell .l-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.ledger-cell .l-val {
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.crm-status-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-status-filter-pills .filter-chip {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+}
+
+.crm-status-filter-pills .filter-chip.active {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.crm-billbook-date-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+
+.financial-table th {
+  white-space: nowrap;
+}
+
+.financial-table td {
+  white-space: nowrap;
+}
+
+.crm-type-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.crm-mode-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.crm-phone-pill {
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.crm-btn-view-customer {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #15803d;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crm-btn-view-customer:hover {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   PROFIT & LOSS SECTION STYLES
+   ========================================================================== */
+.pl-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pl-controls-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pl-mode-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.pl-switch-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pl-switch-btn.active {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+.pl-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pl-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Profit & Loss KPI Cards */
+.pl-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.pl-kpi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1.5px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.pl-kpi-icon {
+  font-size: 32px;
+}
+
+.pl-kpi-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-kpi-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.pl-kpi-val {
+  margin: 3px 0 2px 0;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.pl-kpi-percent {
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.pl-kpi-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.pl-card-profit {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.pl-card-loss {
+  border-color: #fecdd3;
+  background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%);
+}
+
+.text-rose {
+  color: #e11d48;
+}
+
+/* Graphical Representation */
+.pl-graph-section {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.pl-graph-header h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pl-graph-header p {
+  margin: 4px 0 20px 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.pl-no-data-card {
+  text-align: center;
+  padding: 60px 20px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.pl-no-data-card h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pl-no-data-card p {
+  margin: 6px 0 0 0;
+  font-size: 13.5px;
+}
+
+.pl-chart-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.pl-chart-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.pl-donut-svg {
+  width: 240px;
+  height: 240px;
+  margin-bottom: 20px;
+}
+
+.pl-svg-slice {
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.pl-svg-slice:hover {
+  opacity: 0.88;
+}
+
+.donut-center-title {
+  font-size: 8px;
+  font-weight: 800;
+  fill: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.donut-center-amount {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.donut-center-ratio {
+  font-size: 7.5px;
+  font-weight: 700;
+  fill: #475569;
+}
+
+.pl-legend-column {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pl-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.legend-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legend-info {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 12.5px;
+}
+
+.legend-name {
+  font-weight: 700;
+  color: #334155;
+}
+
+.legend-amount {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.legend-amount small {
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Breakdown Lists */
+.pl-items-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.items-box-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.no-items-text {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin: 0;
+  padding: 10px 0;
+}
+
+.items-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.breakdown-item-row {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-title-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.item-type-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.item-type-tag.expense-tag {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.item-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.item-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.item-amount {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Transaction Detail Sheet Modal */
+.crm-txn-detail-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.sheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.s-label {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.s-val {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.s-val.mono {
+  font-family: monospace;
+}
+
+.s-val.bold {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.sheet-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+.sheet-row.highlight-green {
+  background: #d1fae5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #065f46;
+}
+
+.sheet-row.highlight-purple {
+  background: #ede9fe;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #5b21b6;
+}
+
+.sheet-row.highlight-blue {
+  background: #e0f2fe;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #0369a1;
+}
+
+@media (max-width: 900px) {
+  .pl-chart-container {
+    grid-template-columns: 1fr;
+  }
+}
+

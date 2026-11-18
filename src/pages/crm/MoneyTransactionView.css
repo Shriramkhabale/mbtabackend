@@ -1,0 +1,889 @@
+/* ==========================================================================
+   MONEY TRANSACTION VIEW - STYLING
+   ========================================================================== */
+
+.crm-money-container {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 18px 22px 80px;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: crmFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(5, 150, 105, 0.45) transparent;
+}
+
+.crm-money-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.crm-money-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crm-money-container::-webkit-scrollbar-thumb {
+  background: rgba(5, 150, 105, 0.35);
+  border-radius: 99px;
+}
+
+.crm-money-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 150, 105, 0.65);
+}
+
+/* Header Banner */
+.crm-money-header-card {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+  border: 1.5px solid #6ee7b7;
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+}
+
+.crm-money-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crm-money-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #065f46;
+  border: 1.5px solid #a7f3d0;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.08);
+}
+
+.crm-money-back-btn:hover {
+  background: #065f46;
+  color: #ffffff;
+  border-color: #065f46;
+  transform: translateX(-2px);
+}
+
+.crm-money-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.crm-money-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 8px 18px rgba(5, 150, 105, 0.35);
+  flex-shrink: 0;
+}
+
+.crm-money-title-wrap h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #064e3b;
+  letter-spacing: -0.3px;
+}
+
+.crm-money-title-wrap p {
+  margin: 4px 0 0 0;
+  font-size: 13.5px;
+  color: #047857;
+  font-weight: 500;
+}
+
+.crm-money-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.crm-money-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.crm-money-btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+}
+
+.crm-money-btn-primary:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.4);
+}
+
+.crm-money-btn-secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #cbd5e1;
+}
+
+.crm-money-btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.crm-money-btn-outline {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1.5px solid #fecdd3;
+}
+
+.crm-money-btn-outline:hover {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+/* Financial KPI Grid */
+.crm-money-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.crm-money-kpi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.crm-money-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.crm-money-kpi-card .kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.crm-money-kpi-card.card-emerald .kpi-icon {
+  background: #d1fae5;
+}
+
+.crm-money-kpi-card.card-blue .kpi-icon {
+  background: #e0f2fe;
+}
+
+.crm-money-kpi-card.card-purple .kpi-icon {
+  background: #f3e8ff;
+}
+
+.crm-money-kpi-card.card-orange .kpi-icon {
+  background: #ffedd5;
+}
+
+.crm-money-kpi-card .kpi-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-money-kpi-card .kpi-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.crm-money-kpi-card .kpi-value {
+  margin: 3px 0 2px 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.crm-money-kpi-card .kpi-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Toolbar & Search */
+.crm-money-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: #ffffff;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.crm-money-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 8px 14px;
+  flex: 1;
+  max-width: 480px;
+}
+
+.crm-money-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  width: 100%;
+  color: #0f172a;
+}
+
+.crm-money-filters {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.status-chips {
+  display: flex;
+  gap: 6px;
+}
+
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px 10px;
+}
+
+.date-input {
+  border: none;
+  background: transparent;
+  font-size: 12.5px;
+  color: #334155;
+  outline: none;
+  font-family: inherit;
+}
+
+.date-clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+}
+
+/* Table Card */
+.crm-money-table-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.table-header-row {
+  padding: 18px 24px;
+  border-bottom: 1.5px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.table-count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #059669;
+  background: #d1fae5;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.crm-money-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.crm-money-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.crm-money-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 16px;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.crm-money-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.crm-money-table tr:hover td {
+  background: #fafaf9;
+}
+
+.txn-id-badge {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.txn-date {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.customer-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customer-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.customer-mobile {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.customer-uid-tag {
+  display: inline-block;
+  font-size: 10.5px;
+  color: #7c3aed;
+  font-weight: 700;
+  background: #f3e8ff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.bank-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bank-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.bank-masked {
+  font-size: 11.5px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.amount-cash {
+  font-weight: 800;
+  color: #059669;
+  font-size: 13.5px;
+}
+
+.amount-comm {
+  font-weight: 800;
+  color: #7c3aed;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.comm-type-pill {
+  font-size: 10px;
+  font-weight: 700;
+  background: #ede9fe;
+  color: #6d28d9;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.amount-net {
+  font-weight: 900;
+  color: #0284c7;
+  font-size: 14px;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.status-successful {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.utr-val {
+  font-family: monospace;
+  font-size: 12px;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.table-action-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.table-action-btn:hover {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+
+/* Modals */
+.crm-modal-card.txn-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 680px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: crmModalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-modal-card.confirm-modal,
+.crm-modal-card.receipt-view-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 580px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: crmModalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-modal-card.status-modal,
+.crm-modal-card.expense-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: crmModalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.customer-picker-banner {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.comm-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.comm-type-select {
+  width: 130px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+}
+
+/* Calculation Breakdown Card */
+.calc-summary-box {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
+  border: 1.5px solid #a7f3d0;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.calc-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.calc-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #065f46;
+  text-transform: uppercase;
+}
+
+.calc-val {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.calc-operator {
+  font-size: 20px;
+  font-weight: 800;
+  color: #059669;
+}
+
+.calc-item.highlight {
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.text-emerald {
+  color: #059669;
+}
+
+.text-purple {
+  color: #7c3aed;
+}
+
+.text-blue {
+  color: #0284c7;
+}
+
+/* Confirmation Receipt */
+.confirm-receipt-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+}
+
+.receipt-row .r-label {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.receipt-row .r-val {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.receipt-row .mono {
+  font-family: monospace;
+}
+
+.receipt-row.highlight-green {
+  background: #d1fae5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #065f46;
+}
+
+.receipt-row.highlight-purple {
+  background: #ede9fe;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #5b21b6;
+}
+
+.receipt-row.highlight-blue {
+  background: #e0f2fe;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #0369a1;
+}
+
+.receipt-row .bold-lg {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.receipt-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+.confirm-notice-box {
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  display: flex;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #92400e;
+  align-items: flex-start;
+}
+
+.confirm-notice-box p {
+  margin: 0;
+}
+
+/* ==========================================================================
+   TWO-WAY DIRECTION TOGGLE & BADGES (CASH TO ONLINE <-> ONLINE TO CASH)
+   ========================================================================== */
+.crm-direction-toggle-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 14px;
+}
+
+.crm-direction-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.crm-direction-btn .dir-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.crm-direction-btn .dir-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-direction-btn .dir-text strong {
+  font-size: 13px;
+  color: #334155;
+}
+
+.crm-direction-btn .dir-text small {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.crm-direction-btn.active.cash-to-online {
+  background: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.crm-direction-btn.active.cash-to-online .dir-text strong {
+  color: #047857;
+}
+
+.crm-direction-btn.active.online-to-cash {
+  background: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+}
+
+.crm-direction-btn.active.online-to-cash .dir-text strong {
+  color: #0284c7;
+}
+
+/* Dynamic Calculation Box for Online to Cash */
+.calc-summary-box.online-to-cash-calc {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+  border: 1.5px solid #7dd3fc;
+}
+
+.calc-summary-box.online-to-cash-calc .calc-title {
+  color: #0369a1;
+}
+
+.calc-summary-box.online-to-cash-calc .calc-operator {
+  color: #0284c7;
+}
+
+/* Direction Badges & Row Styling */
+.crm-direction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.crm-direction-pill.cash-to-online {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.crm-direction-pill.online-to-cash {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+.amount-sub-badge {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.amount-sub-badge.cash {
+  color: #059669;
+}
+
+.amount-sub-badge.online {
+  color: #0284c7;
+}
+
+.amount-online {
+  font-weight: 800;
+  color: #0284c7;
+  font-size: 13.5px;
+}
+
+.amount-cash-out {
+  font-weight: 900;
+  color: #059669;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .calc-summary-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .calc-operator {
+    display: none;
+  }
+}

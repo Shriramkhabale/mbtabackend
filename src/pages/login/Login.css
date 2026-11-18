@@ -1,0 +1,844 @@
+/* ==========================================================================
+   MB MITRA - COMPACT REFINED DIMENSIONS & STYLES (REDUCED SIZE)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Outer Wrapper with Ambient Blurred Backdrop */
+.login-wrapper {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: #040A16;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dynamic Blurred Background Matching Updated Admin Photo */
+.dynamic-bg-blur {
+  position: absolute;
+  inset: -20px;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  filter: blur(10px) brightness(1);
+  opacity: 1;
+  z-index: 0;
+  pointer-events: none;
+  transition: background-image 0.5s ease-in-out;
+}
+
+/* Dark Tint Overlay over Blurred Background */
+.login-wrapper::before {
+  display: none;
+}
+
+/* Ambient Glowing Background Orbs */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.45;
+}
+
+.orb-1 {
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(255, 102, 0, 0.2) 0%, transparent 70%);
+  top: -120px;
+  left: -80px;
+}
+
+.orb-2 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(30, 107, 255, 0.25) 0%, transparent 70%);
+  bottom: -160px;
+  right: -80px;
+}
+
+.orb-3 {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(0, 178, 255, 0.15) 0%, transparent 70%);
+  top: 30%;
+  left: 45%;
+}
+
+/* Main Split Glass Card Container - Compact Size */
+.login-card {
+  display: flex;
+  flex-direction: row;
+  width: min(90%, 940px);
+  height: min(90vh, 580px);
+  background: rgba(13, 20, 36, 0.68);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.65), 
+    0 0 45px rgba(30, 107, 255, 0.14);
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  animation: fadeIn 0.35s ease-out;
+  margin: auto;
+  transition: all 0.3s ease;
+}
+
+.login-card.register-mode {
+  width: min(96%, 1060px);
+  height: min(94vh, 670px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   LEFT SIDE - BRANDING, BANNER & FEATURE CARDS
+   ========================================================================== */
+.login-left {
+  flex: 1.35;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  background: linear-gradient(160deg, rgba(20, 32, 58, 0.7) 0%, rgba(10, 18, 36, 0.85) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.left-pattern-overlay {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(255, 102, 0, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(30, 107, 255, 0.04) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* Brand Header */
+.brand-header {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.brand-title {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0 0 1px 0;
+  cursor: pointer;
+  line-height: 1.1;
+  user-select: none;
+}
+
+.brand-orange {
+  color: #FF5500;
+  text-shadow: 0 0 10px rgba(255, 85, 0, 0.4);
+}
+
+.brand-white {
+  color: #FFFFFF;
+}
+
+.brand-subtitle {
+  font-size: 12px;
+  color: #8A99AD;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Middle Showcase Box - Admin Photo Fills Entire Box 100% */
+.news-showcase-box {
+  width: 100%;
+  height: 170px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  margin: 10px 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: rgba(10, 16, 30, 0.6);
+}
+
+.news-showcase-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+}
+
+.carousel-dots-overlay {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 5;
+  background: rgba(4, 10, 22, 0.6);
+  padding: 4px 8px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.carousel-dot.active {
+  width: 14px;
+  border-radius: 4px;
+  background: #FF5500;
+  box-shadow: 0 0 8px rgba(255, 85, 0, 0.8);
+}
+
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 16, 30, 0.3) 0%, rgba(10, 16, 30, 0.9) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px;
+}
+
+.preview-mini-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mini-pill {
+  font-size: 8px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 2px 5px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: max-content;
+}
+
+.preview-footer-line {
+  font-size: 7.5px;
+  color: #E2E8F0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 500;
+}
+
+/* Bottom 3 Action Cards */
+.feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 6px;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  min-height: 72px;
+  justify-content: center;
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.feature-card-icon {
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature-card-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.feature-card-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.feature-card-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.feature-card-sub {
+  font-size: 8.5px;
+  color: #8A99AD;
+  margin-top: 1px;
+  line-height: 1.15;
+}
+
+/* Left Footer Info */
+.left-footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  z-index: 2;
+}
+
+.footer-info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: #8A99AD;
+}
+
+.footer-info-item svg {
+  color: #8A99AD;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.footer-info-item b {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   RIGHT SIDE - LOGIN FORM PANEL (CREAM BACKGROUND)
+   ========================================================================== */
+.login-right {
+  flex: 1;
+  background: #FDFBF7;
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.login-right.register-mode-right {
+  flex: 1.75;
+  padding: 18px 24px;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 290px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: max-width 0.3s ease;
+}
+
+.login-form-container.register-mode-container {
+  max-width: 580px;
+}
+
+/* Scrollbar for Registration Form */
+.reg-custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.reg-custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+}
+
+.reg-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #F97316;
+  border-radius: 10px;
+}
+
+/* Registration Section Cards & Form Layout */
+.reg-section-card {
+  background: #FFFFFF;
+  border: 1.5px solid #FFEDD5;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.05);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.reg-section-card:hover {
+  border-color: #FDBA74;
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.09);
+}
+
+.reg-section-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  border-bottom: 1.5px solid #FFEDD5;
+  padding-bottom: 8px;
+}
+
+.reg-section-num {
+  background: linear-gradient(135deg, #FF5500 0%, #EA580C 100%);
+  color: #FFFFFF;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+  flex-shrink: 0;
+}
+
+.reg-section-title {
+  font-size: 13.5px;
+  color: #C2410C;
+  font-weight: 800;
+  letter-spacing: 0.1px;
+}
+
+.reg-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  display: block;
+  margin-bottom: 4px;
+  letter-spacing: 0.1px;
+}
+
+.reg-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.reg-grid-otp {
+  display: grid;
+  grid-template-columns: 1fr 130px;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Glowing Orange Circular Badge Logo */
+.orange-logo-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  box-shadow: 
+    0 4px 20px rgba(255, 102, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.orange-logo-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 6px 25px rgba(255, 102, 0, 0.55);
+}
+
+.orange-badge-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Headings */
+.welcome-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 2px 0;
+  text-align: center;
+  letter-spacing: -0.2px;
+}
+
+.welcome-subtitle {
+  font-size: 12px;
+  color: #475569;
+  margin: 0 0 14px 0;
+  text-align: center;
+}
+
+/* Form Layout */
+.dark-login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dark-input-group {
+  width: 100%;
+}
+
+.dark-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 9px;
+  padding: 0 12px;
+  height: 40px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: text;
+}
+
+.dark-input-wrapper:focus-within {
+  border-color: #FF5500;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3.5px rgba(255, 85, 0, 0.12);
+}
+
+.dark-input-wrapper:focus-within .dark-input-icon {
+  color: #FF5500;
+}
+
+.dark-input-icon {
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.dark-input-icon svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.dark-input-wrapper input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #0F172A;
+  font-size: 13px;
+  font-weight: 500;
+  width: 100%;
+  height: 100%;
+  font-family: inherit;
+  cursor: text;
+}
+
+.dark-input-wrapper input::placeholder {
+  color: #94A3B8;
+}
+
+.dark-password-toggle {
+  color: #64748B;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.dark-password-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dark-password-toggle:hover {
+  color: #FF5500;
+}
+
+/* Forgot Password Link */
+.forgot-password-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -3px;
+  margin-bottom: 2px;
+}
+
+.forgot-password-link {
+  font-size: 11.5px;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.forgot-password-link:hover {
+  color: #FF5500;
+  text-decoration: underline;
+}
+
+/* Primary Brand Action Button */
+.blue-login-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #FF5500 0%, #EA580C 100%);
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  transition: all 0.2s ease;
+  margin-top: 4px;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.blue-login-btn:hover {
+  background: linear-gradient(135deg, #FF6611 0%, #F97316 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45);
+}
+
+.blue-login-btn:active {
+  transform: translateY(0);
+}
+
+/* Register Prompt */
+.register-prompt-row {
+  text-align: center;
+  font-size: 12px;
+  color: #475569;
+  margin-top: 8px;
+}
+
+.register-link {
+  color: #FF5500;
+  font-weight: 800;
+  cursor: pointer;
+  margin-left: 3px;
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: #EA580C;
+  text-decoration: underline;
+}
+
+/* App Store Badges */
+.app-store-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  width: 100%;
+  justify-content: center;
+}
+
+.store-badge-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #0F172A;
+  border: 1px solid #1E293B;
+  border-radius: 7px;
+  padding: 6px 8px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.store-badge-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.store-badge-btn:hover {
+  background: #1E293B;
+  border-color: #334155;
+}
+
+.badge-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.badge-sub {
+  font-size: 7px;
+  color: #94A3B8;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.badge-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.1;
+  margin-top: 1px;
+}
+
+/* Options / Aux row */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* Two-Step Verification Masked Mobile Card */
+.two-step-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 107, 255, 0.08);
+  border: 1px solid rgba(30, 107, 255, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.two-step-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(30, 107, 255, 0.25) 0%, rgba(0, 178, 255, 0.15) 100%);
+  border: 1px solid rgba(30, 107, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38BDF8;
+  flex-shrink: 0;
+}
+
+.two-step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.two-step-label {
+  font-size: 10.5px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.two-step-phone {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F8FAFC;
+  letter-spacing: 0.8px;
+}
+
+.otp-sent-info {
+  text-align: center;
+  font-size: 11px;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+}
+
+.otp-sent-info strong {
+  color: #38BDF8;
+  letter-spacing: 0.8px;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 900px) {
+  .login-wrapper {
+    overflow-y: auto;
+  }
+
+  .login-card {
+    flex-direction: column;
+    width: min(100%, 480px);
+    height: auto;
+  }
+
+  .login-left {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 20px;
+  }
+
+  .banner-card {
+    height: auto;
+  }
+
+  .login-right {
+    padding: 24px 20px;
+  }
+}
