@@ -25,6 +25,7 @@ const etdsTransactionSchema = new mongoose.Schema({
     default: true
   },
   serviceType: { type: String, required: true },
+  providerAcknowledgementNumber: { type: String, default: '' },
   providerMessage: { type: String, default: '' },
   status: {
     type: String,
