@@ -237,6 +237,7 @@ const getProviderAcknowledgementNumber = (payload) => {
     'acknowledgmentno',
     'acknowledgmentnumber',
     'nsdackno',
+    'nsdlackno',
     'panackno'
   ]);
   let acknowledgementNumber = '';
@@ -631,7 +632,14 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
         transaction.providerAcknowledgementNumber = providerAcknowledgementNumber;
       }
       if (!['initiated', 'pending', 'unknown'].includes(transaction.status)) {
-        if (providerAcknowledgementNumber) await transaction.save({ session });
+        if (providerAcknowledgementNumber) {
+          await transaction.save({ session });
+          const application = await PanCardApplication.findById(transaction.applicationId).session(session);
+          if (application && !application.nsdlReceiptNumber) {
+            application.nsdlReceiptNumber = providerAcknowledgementNumber;
+            await application.save({ session });
+          }
+        }
         return;
       }
 

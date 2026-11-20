@@ -16,12 +16,12 @@ test('maps provider status code 3 to success', () => {
   assert.equal(safeStatusFromPayload({ Status: '3' }), 'success');
 });
 
-test('maps ETDS TranStatus and extracts its NsdAckNo field', () => {
+test('maps ETDS TranStatus and extracts its NsdlAckNo field', () => {
   assert.equal(safeStatusFromPayload({ TranStatus: 0 }), 'failed');
   assert.equal(safeStatusFromPayload({ TranStatus: 3 }), 'success');
   assert.equal(
-    getProviderAcknowledgementNumber({ TranStatus: 3, NsdAckNo: 'NSDL-ACK-123456' }),
-    'NSDL-ACK-123456'
+    getProviderAcknowledgementNumber({ TranStatus: 3, NsdlAckNo: '123456789012345' }),
+    '123456789012345'
   );
 });
 
