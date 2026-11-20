@@ -163,10 +163,23 @@ const postForAuthCode = (clientId, clientSecret) => new Promise((resolve, reject
 
 const getProviderStatusFields = (payload) => {
   const fields = [];
+  const statusKeys = new Set([
+    'status',
+    'statuscode',
+    'applicationstatus',
+    'requeststatus',
+    'transtatus',
+    'transactionstatus',
+    'responsestatus',
+    'resultstatus',
+    'responsecode',
+    'resultcode'
+  ]);
   const visit = (value) => {
     if (!value || typeof value !== 'object') return;
     Object.entries(value).forEach(([key, child]) => {
-      if (/^(status|statuscode|applicationstatus|requeststatus)$/i.test(key) &&
+      const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (statusKeys.has(normalizedKey) &&
           (typeof child === 'string' || typeof child === 'number')) {
         fields.push({ key, value: String(child).trim() });
       } else if (child && typeof child === 'object') {
@@ -180,11 +193,26 @@ const getProviderStatusFields = (payload) => {
 
 const getProviderTextFields = (payload) => {
   const fields = [];
+  const textKeys = new Set([
+    'error',
+    'errorcode',
+    'errormessage',
+    'errordescription',
+    'failure',
+    'failurecode',
+    'failuremessage',
+    'message',
+    'description',
+    'remarks',
+    'responsemessage',
+    'resultmessage',
+    'statusmessage'
+  ]);
   const visit = (value) => {
     if (!value || typeof value !== 'object') return;
     Object.entries(value).forEach(([key, child]) => {
-      if ((typeof child === 'string' || typeof child === 'number') &&
-          /^(error(code|message|description)?|failure(code|message)?|message|description|remarks?)$/i.test(key)) {
+      const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if ((typeof child === 'string' || typeof child === 'number') && textKeys.has(normalizedKey)) {
         const text = String(child).trim();
         if (text) fields.push({ key, value: text });
       } else if (child && typeof child === 'object') {
@@ -196,6 +224,39 @@ const getProviderTextFields = (payload) => {
   return fields;
 };
 
+const getProviderAcknowledgementNumber = (payload) => {
+  const acknowledgementKeys = new Set([
+    'ack',
+    'ackno',
+    'acknum',
+    'acknumber',
+    'acknowledgement',
+    'acknowledgementno',
+    'acknowledgementnumber',
+    'acknowledgment',
+    'acknowledgmentno',
+    'acknowledgmentnumber',
+    'nsdackno',
+    'panackno'
+  ]);
+  let acknowledgementNumber = '';
+  const visit = (value) => {
+    if (!value || typeof value !== 'object' || acknowledgementNumber) return;
+    Object.entries(value).forEach(([key, child]) => {
+      const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (acknowledgementKeys.has(normalizedKey) &&
+          (typeof child === 'string' || typeof child === 'number')) {
+        const candidate = String(child).replace(/[\u0000-\u001f\u007f]/g, '').trim();
+        if (candidate && candidate.length <= 100) acknowledgementNumber = candidate;
+      } else if (child && typeof child === 'object') {
+        visit(child);
+      }
+    });
+  };
+  visit(payload);
+  return acknowledgementNumber;
+};
+
 const safeStatusFromPayload = (payload) => {
   const values = getProviderStatusFields(payload)
     .map(({ value }) => value.toLowerCase().replace(/[\s_-]/g, ''));
@@ -204,11 +265,11 @@ const safeStatusFromPayload = (payload) => {
   if (values.some(value => ['pending', 'inprogress', 'processing'].includes(value))) return 'pending';
   const textFields = getProviderTextFields(payload);
   const hasErrorCode = textFields.some(({ key, value }) =>
-    /^(errorcode|failurecode)$/i.test(key) &&
+    /^(errorcode|failurecode)$/i.test(key.toLowerCase().replace(/[^a-z0-9]/g, '')) &&
     !['0', '00', '200', 'success', 'none', 'noerror', 'null'].includes(value.toLowerCase().replace(/[\s_-]/g, ''))
   );
   const describesFailure = textFields.some(({ key, value }) =>
-    /^(errormessage|errordescription|failuremessage|message|description|remarks?)$/i.test(key) &&
+    /^(errormessage|errordescription|failuremessage|message|description|remarks|responsemessage|resultmessage|statusmessage)$/i.test(key.toLowerCase().replace(/[^a-z0-9]/g, '')) &&
     /\b(fail(?:ed|ure)?|reject(?:ed)?|invalid|error|not valid|already been issued|exhausted|session is invalid)\b/i.test(value)
   );
   if (hasErrorCode || describesFailure) return 'failed';
@@ -217,7 +278,11 @@ const safeStatusFromPayload = (payload) => {
 
 const getProviderFailureMessage = (payload) => {
   const fields = getProviderTextFields(payload);
-  const message = fields.find(({ key }) => /^(errormessage|errordescription|failuremessage|message|description|remarks?)$/i.test(key));
+  const message = fields.find(({ key }) =>
+    /^(errormessage|errordescription|failuremessage|message|description|remarks|responsemessage|resultmessage|statusmessage)$/i.test(
+      key.toLowerCase().replace(/[^a-z0-9]/g, '')
+    )
+  );
   return message ? message.value.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, 500) : '';
 };
 
@@ -473,9 +538,10 @@ router.get('/result/:ref', retailerCors, verifyRetailer, async (req, res) => {
     const transaction = await EtdsTransaction.findOne({
       public_ref: req.params.ref,
       userId: req.retailer.userId
-    }).select('public_ref userId serviceType providerMessage status createdAt updatedAt');
+    }).select('public_ref userId applicationId providerAcknowledgementNumber serviceType providerMessage status createdAt updatedAt');
 
     if (!transaction) return res.status(404).json({ success: false, message: 'Transaction not found.' });
+    const application = await PanCardApplication.findById(transaction.applicationId).select('ackNumber');
 
     const messages = {
       initiated: 'Your request was submitted and is waiting for the provider.',
@@ -487,6 +553,8 @@ router.get('/result/:ref', retailerCors, verifyRetailer, async (req, res) => {
     return res.json({
       status: transaction.status,
       serviceType: transaction.serviceType,
+      ackNumber: application?.ackNumber || '',
+      providerAcknowledgementNumber: transaction.providerAcknowledgementNumber || '',
       message: messages[transaction.status] || messages.unknown,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt
@@ -533,10 +601,12 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
 
   let callbackStatus = 'pending';
   let providerMessage = '';
+  let providerAcknowledgementNumber = '';
   try {
     const plaintext = decryptCallbackPayload(callbackData.payload, config.aesKey);
     const decodedPayload = JSON.parse(plaintext);
     callbackStatus = safeStatusFromPayload(decodedPayload);
+    providerAcknowledgementNumber = getProviderAcknowledgementNumber(decodedPayload);
     if (callbackStatus === 'failed') providerMessage = getProviderFailureMessage(decodedPayload);
     if (callbackStatus === 'unknown') {
       const fields = getProviderStatusFields(decodedPayload).map(({ key, value }) => ({
@@ -557,7 +627,13 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
     await session.withTransaction(async () => {
       transaction = await EtdsTransaction.findOne({ tid }).session(session);
       if (!transaction) throw new Error('ETDS transaction disappeared while processing its callback.');
-      if (!['initiated', 'pending', 'unknown'].includes(transaction.status)) return;
+      if (providerAcknowledgementNumber && !transaction.providerAcknowledgementNumber) {
+        transaction.providerAcknowledgementNumber = providerAcknowledgementNumber;
+      }
+      if (!['initiated', 'pending', 'unknown'].includes(transaction.status)) {
+        if (providerAcknowledgementNumber) await transaction.save({ session });
+        return;
+      }
 
       if (callbackStatus === 'success') {
         const application = await PanCardApplication.findById(transaction.applicationId).session(session);
@@ -589,6 +665,9 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
         }
 
         application.status = 'Completed';
+        if (providerAcknowledgementNumber) {
+          application.nsdlReceiptNumber = providerAcknowledgementNumber;
+        }
         await application.save({ session });
         transaction.status = 'success';
         await transaction.save({ session });
@@ -596,6 +675,9 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
       }
 
       transaction.status = callbackStatus;
+      if (providerAcknowledgementNumber) {
+        transaction.providerAcknowledgementNumber = providerAcknowledgementNumber;
+      }
       if (providerMessage) transaction.providerMessage = providerMessage;
       await transaction.save({ session });
       const applicationStatus = callbackStatus === 'failed' ? 'Rejected' : 'In Progress';
@@ -603,6 +685,9 @@ router.post('/callback', applyCallbackRateLimit, (req, res, next) => {
         transaction.applicationId,
         {
           status: applicationStatus,
+          ...(providerAcknowledgementNumber
+            ? { nsdlReceiptNumber: providerAcknowledgementNumber }
+            : {}),
           ...(callbackStatus === 'failed'
             ? { remarks: providerMessage || 'The provider could not complete this PAN request.' }
             : {})
@@ -634,4 +719,10 @@ router.get('/ping-provider', async (req, res) => {
   }
 });
 
-module.exports = { router, validateLiveEtdsConfig, safeStatusFromPayload };
+module.exports = {
+  router,
+  validateLiveEtdsConfig,
+  safeStatusFromPayload,
+  getProviderAcknowledgementNumber,
+  getProviderFailureMessage
+};
