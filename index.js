@@ -46,6 +46,7 @@ const offlineWorkRoutes = require('./routes/offlineWorkRoutes');
 const toolRoutes = require('./routes/toolRoutes');
 const pdfToolsRoutes = require('./routes/pdfToolsRoutes');
 const crmRoutes = require('./routes/crmRoutes');
+const statusApiRoutes = require('./routes/statusApiRoutes');
 
 // ETDS callback is public and intentionally registered before global CORS/body parsing.
 app.use('/api/etds', etdsRoutes);
@@ -88,6 +89,7 @@ app.use('/api/quick-links', quickLinkRoutes);
 app.use('/api/tools', toolRoutes);
 app.use('/api/pdf-tools', pdfToolsRoutes);
 app.use('/api/crm', crmRoutes);
+app.use('/api/status-api', statusApiRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Direct PaySprint Live Webhook Callback Endpoint
