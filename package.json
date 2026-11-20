@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
-    "test": "node --test routes/etdsRoutes.test.js"
+    "test": "node --test routes/etdsRoutes.test.js routes/statusApiRoutes.test.js"
   },
   "keywords": [],
   "author": "",
