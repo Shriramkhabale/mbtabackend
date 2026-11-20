@@ -46,7 +46,7 @@ const offlineWorkRoutes = require('./routes/offlineWorkRoutes');
 const toolRoutes = require('./routes/toolRoutes');
 const pdfToolsRoutes = require('./routes/pdfToolsRoutes');
 const crmRoutes = require('./routes/crmRoutes');
-const statusApiRoutes = require('./routes/statusApiRoutes');
+const { router: statusApiRoutes } = require('./routes/statusApiRoutes');
 
 // ETDS callback is public and intentionally registered before global CORS/body parsing.
 app.use('/api/etds', etdsRoutes);
