@@ -88,6 +88,20 @@ const getAadhaarOtpToken = (serviceId, providerData) => (
     : undefined
 );
 
+const getProviderTimeout = (serviceId, parameters) => (
+  serviceId === 'aadhar_card_details_by_otp_api' &&
+  typeof parameters.otp === 'string' &&
+  parameters.otp.trim().length > 0 &&
+  typeof parameters.token === 'string' &&
+  parameters.token.length > 0
+    ? 45000
+    : 20000
+);
+
+const isProviderTimeout = error => (
+  Boolean(error && ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code))
+);
+
 const requireStatusApiPermission = async (req, res, next) => {
   try {
     const user = await User.findOne({
@@ -158,7 +172,7 @@ router.post('/run', verifyRetailer, requireStatusApiPermission, async (req, res)
       qs.stringify({ ...parameters, apikeyfill: apiKey }),
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        timeout: 20000,
+        timeout: getProviderTimeout(normalizedServiceId, parameters),
         maxRedirects: 0,
         maxContentLength: 2 * 1024 * 1024,
         maxBodyLength: 16 * 1024
@@ -181,10 +195,17 @@ router.post('/run', verifyRetailer, requireStatusApiPermission, async (req, res)
       });
     }
 
-    console.error('[Status API] Provider request failed:', error.message);
-    return res.status(502).json({
+    const timedOut = isProviderTimeout(error);
+    console.error('[Status API] Provider request failed:', {
+      serviceId: normalizedServiceId,
+      code: error.code || 'UNKNOWN',
+      message: error.message
+    });
+    return res.status(timedOut ? 504 : 502).json({
       success: false,
-      message: 'Could not reach the Status API provider. Please try again.'
+      message: timedOut
+        ? 'The provider timed out while processing this request. Check the provider request status before retrying; verification may already have completed.'
+        : 'Could not connect to the Status API provider. Check provider availability and confirm the backend server outbound IP is whitelisted.'
     });
   }
 });
@@ -195,5 +216,7 @@ module.exports = {
   hasStatusApiPermission,
   validateParameters,
   redactProviderData,
-  getAadhaarOtpToken
+  getAadhaarOtpToken,
+  getProviderTimeout,
+  isProviderTimeout
 };
