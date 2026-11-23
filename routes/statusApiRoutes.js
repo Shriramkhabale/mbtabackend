@@ -80,6 +80,14 @@ const redactProviderData = (value, apiKey) => {
   ]));
 };
 
+const getAadhaarOtpToken = (serviceId, providerData) => (
+  serviceId === 'aadhar_card_details_by_otp_api' &&
+  providerData &&
+  typeof providerData.token === 'string'
+    ? providerData.token
+    : undefined
+);
+
 const requireStatusApiPermission = async (req, res, next) => {
   try {
     const user = await User.findOne({
@@ -157,10 +165,12 @@ router.post('/run', verifyRetailer, requireStatusApiPermission, async (req, res)
       }
     );
 
+    const otpToken = getAadhaarOtpToken(normalizedServiceId, response.data);
     return res.json({
       success: true,
       service: service.label,
-      data: redactProviderData(response.data, apiKey)
+      data: redactProviderData(response.data, apiKey),
+      ...(otpToken ? { otpToken } : {})
     });
   } catch (error) {
     if (error.response) {
@@ -184,5 +194,6 @@ module.exports = {
   STATUS_API_SERVICES,
   hasStatusApiPermission,
   validateParameters,
-  redactProviderData
+  redactProviderData,
+  getAadhaarOtpToken
 };

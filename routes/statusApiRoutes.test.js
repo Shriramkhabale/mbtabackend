@@ -4,7 +4,8 @@ const {
   STATUS_API_SERVICES,
   hasStatusApiPermission,
   validateParameters,
-  redactProviderData
+  redactProviderData,
+  getAadhaarOtpToken
 } = require('./statusApiRoutes');
 
 test('exposes only the seven requested DHBOSS Status APIs', () => {
@@ -34,7 +35,24 @@ test('validates parameters and prevents callers from supplying the provider key'
 
 test('redacts API credentials from provider responses', () => {
   assert.deepEqual(
-    redactProviderData({ apiKey: 'secret-key', message: 'request secret-key' }, 'secret-key'),
-    { apiKey: '[redacted]', message: 'request [redacted]' }
+    redactProviderData({
+      apiKey: 'secret-key',
+      message: 'request secret-key',
+      token: 'otp-session-token'
+    }, 'secret-key'),
+    { apiKey: '[redacted]', message: 'request [redacted]', token: '[redacted]' }
+  );
+});
+
+test('exposes an OTP session token only for the Aadhaar OTP service', () => {
+  const providerResponse = { token: 'otp-session-token' };
+  assert.equal(
+    getAadhaarOtpToken('aadhar_card_details_by_otp_api', providerResponse),
+    'otp-session-token'
+  );
+  assert.equal(getAadhaarOtpToken('pro_pan_verification', providerResponse), undefined);
+  assert.equal(
+    getAadhaarOtpToken('aadhar_card_details_by_otp_api', { token: 123 }),
+    undefined
   );
 });
