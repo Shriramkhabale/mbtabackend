@@ -5,7 +5,9 @@ const {
   hasStatusApiPermission,
   validateParameters,
   redactProviderData,
-  getAadhaarOtpToken
+  getAadhaarOtpToken,
+  getProviderTimeout,
+  isProviderTimeout
 } = require('./statusApiRoutes');
 
 test('exposes only the seven requested DHBOSS Status APIs', () => {
@@ -55,4 +57,22 @@ test('exposes an OTP session token only for the Aadhaar OTP service', () => {
     getAadhaarOtpToken('aadhar_card_details_by_otp_api', { token: 123 }),
     undefined
   );
+});
+
+test('allows more time for Aadhaar OTP verification and identifies provider timeouts', () => {
+  assert.equal(
+    getProviderTimeout('aadhar_card_details_by_otp_api', { otp: '123456', token: 'session' }),
+    45000
+  );
+  assert.equal(
+    getProviderTimeout('aadhar_card_details_by_otp_api', { uidno: '123456789012' }),
+    20000
+  );
+  assert.equal(
+    getProviderTimeout('indiapost', { otp: '123456', token: 'session' }),
+    20000
+  );
+  assert.equal(isProviderTimeout({ code: 'ECONNABORTED' }), true);
+  assert.equal(isProviderTimeout({ code: 'ETIMEDOUT' }), true);
+  assert.equal(isProviderTimeout({ code: 'ECONNREFUSED' }), false);
 });
