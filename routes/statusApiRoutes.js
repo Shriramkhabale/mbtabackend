@@ -94,7 +94,7 @@ const getProviderTimeout = (serviceId, parameters) => (
   parameters.otp.trim().length > 0 &&
   typeof parameters.token === 'string' &&
   parameters.token.length > 0
-    ? 45000
+    ? 120000
     : 20000
 );
 

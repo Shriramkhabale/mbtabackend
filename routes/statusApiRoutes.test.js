@@ -62,7 +62,7 @@ test('exposes an OTP session token only for the Aadhaar OTP service', () => {
 test('allows more time for Aadhaar OTP verification and identifies provider timeouts', () => {
   assert.equal(
     getProviderTimeout('aadhar_card_details_by_otp_api', { otp: '123456', token: 'session' }),
-    45000
+    120000
   );
   assert.equal(
     getProviderTimeout('aadhar_card_details_by_otp_api', { uidno: '123456789012' }),
