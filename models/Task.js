@@ -65,7 +65,7 @@ const TaskSchema = new mongoose.Schema({
   },
   assignmentType: {
     type: String,
-    enum: ['myself', 'employee'],
+    enum: ['myself', 'employee', 'retailer'],
     default: 'myself'
   },
   assignedEmployees: [

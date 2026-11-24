@@ -116,7 +116,9 @@ router.get('/calendar', async (req, res) => {
       andConditions.push({
         $or: [
           { 'assignedEmployees.employeeUid': actor.uid },
-          { assignedToUid: actor.uid }
+          { assignedToUid: actor.uid },
+          { 'createdBy.uid': actor.uid },
+          { createdByUid: actor.uid }
         ]
       });
     } else if (employeeUid && employeeUid.trim() && employeeUid !== 'ALL') {
@@ -191,7 +193,9 @@ router.get('/stats', async (req, res) => {
     if (actor.role === 'employee') {
       baseFilter.$or = [
         { 'assignedEmployees.employeeUid': actor.uid },
-        { assignedToUid: actor.uid }
+        { assignedToUid: actor.uid },
+        { 'createdBy.uid': actor.uid },
+        { createdByUid: actor.uid }
       ];
     } else if (employeeUid && employeeUid.trim() && employeeUid !== 'ALL') {
       if (employeeUid === 'myself') {
@@ -373,7 +377,9 @@ router.get('/', async (req, res) => {
     if (actor.role === 'employee') {
       filter.$or = [
         { 'assignedEmployees.employeeUid': actor.uid },
-        { assignedToUid: actor.uid }
+        { assignedToUid: actor.uid },
+        { 'createdBy.uid': actor.uid },
+        { createdByUid: actor.uid }
       ];
     } else {
       if (view === 'my_tasks') {
@@ -471,7 +477,9 @@ router.get('/', async (req, res) => {
     if (actor.role === 'employee') {
       baseCountFilter.$or = [
         { 'assignedEmployees.employeeUid': actor.uid },
-        { assignedToUid: actor.uid }
+        { assignedToUid: actor.uid },
+        { 'createdBy.uid': actor.uid },
+        { createdByUid: actor.uid }
       ];
     }
     const [allCount, myCount, assignedCount, compCount, pendCount, inProgCount, ovCount] = await Promise.all([
@@ -538,10 +546,26 @@ router.post('/', async (req, res) => {
 
     // Resolve assigned employees
     let assignedEmployees = [];
-    let assignedToName = 'Myself';
+    let assignedToName = 'Retailer';
     let assignedToUid = retailerId;
+    let finalAssignmentType = assignmentType || 'myself';
 
-    if (assignmentType === 'employee') {
+    if (assignmentType === 'retailer') {
+      assignedToName = 'Retailer';
+      assignedToUid = retailerId;
+      assignedEmployees = [];
+      finalAssignmentType = 'retailer';
+    } else if (assignmentType === 'myself' && actor.role === 'employee') {
+      // Employee assigning to myself
+      assignedEmployees = [{
+        employeeUid: actor.uid,
+        employeeName: actor.name,
+        assignedAt: new Date()
+      }];
+      assignedToName = actor.name;
+      assignedToUid = actor.uid;
+      finalAssignmentType = 'employee';
+    } else if (assignmentType === 'employee') {
       const uids = Array.isArray(assignedEmployeeUids) ? assignedEmployeeUids : [assignedEmployeeUids];
       const validUids = uids.filter(Boolean);
 
@@ -554,14 +578,30 @@ router.post('/', async (req, res) => {
         employeeUid: { $in: validUids }
       }).select('employeeUid fullName').lean();
 
-      assignedEmployees = emps.map(e => ({
-        employeeUid: e.employeeUid,
-        employeeName: e.fullName,
-        assignedAt: new Date()
-      }));
-
-      assignedToName = assignedEmployees.map(e => e.employeeName).join(', ');
-      assignedToUid = assignedEmployees.map(e => e.employeeUid).join(', ');
+      if (emps.length > 0) {
+        assignedEmployees = emps.map(e => ({
+          employeeUid: e.employeeUid,
+          employeeName: e.fullName,
+          assignedAt: new Date()
+        }));
+        assignedToName = assignedEmployees.map(e => e.employeeName).join(', ');
+        assignedToUid = assignedEmployees.map(e => e.employeeUid).join(', ');
+      } else {
+        assignedEmployees = validUids.map(uid => ({
+          employeeUid: uid,
+          employeeName: uid === actor.uid ? actor.name : uid,
+          assignedAt: new Date()
+        }));
+        assignedToName = assignedEmployees.map(e => e.employeeName).join(', ');
+        assignedToUid = assignedEmployees.map(e => e.employeeUid).join(', ');
+      }
+      finalAssignmentType = 'employee';
+    } else {
+      // Retailer myself
+      assignedToName = 'Retailer';
+      assignedToUid = retailerId;
+      assignedEmployees = [];
+      finalAssignmentType = 'myself';
     }
 
     // Generate atomic sequential Task ID
@@ -579,7 +619,7 @@ router.post('/', async (req, res) => {
       dueTime,
       priority,
       workStatus: 'Not Started',
-      assignmentType,
+      assignmentType: finalAssignmentType,
       assignedEmployees,
       assignedToName,
       assignedToUid,
@@ -657,8 +697,9 @@ router.get('/:id', async (req, res) => {
     if (actor.role === 'employee') {
       const isAssigned = (task.assignedEmployees && task.assignedEmployees.some(e => e.employeeUid === actor.uid)) ||
                          task.assignedToUid === actor.uid;
-      if (!isAssigned) {
-        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this task' });
+      const isCreator = (task.createdBy && task.createdBy.uid === actor.uid) || task.createdByUid === actor.uid;
+      if (!isAssigned && !isCreator) {
+        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to or creator of this task' });
       }
     }
 
@@ -722,37 +763,55 @@ router.put('/:id', async (req, res) => {
     if (notes !== undefined) task.notes = notes;
     if (reminderDateTime !== undefined) task.reminderDateTime = reminderDateTime;
 
-    // Handle reassignment (retailer only)
-    if (actor.role !== 'employee' && assignmentType) {
-      const oldAssignee = task.assignedToName;
-      task.assignmentType = assignmentType;
+    // Handle reassignment (retailer or task creator)
+    if (assignmentType) {
+      const isCreator = (task.createdBy && task.createdBy.uid === actor.uid) || task.createdByUid === actor.uid;
+      if (actor.role !== 'employee' || isCreator) {
+        const oldAssignee = task.assignedToName;
+        task.assignmentType = assignmentType;
 
-      if (assignmentType === 'myself') {
-        task.assignedEmployees = [];
-        task.assignedToName = 'Myself';
-        task.assignedToUid = retailerId;
-      } else if (assignmentType === 'employee' && Array.isArray(assignedEmployeeUids)) {
-        const emps = await Employee.find({
-          retailerId,
-          employeeUid: { $in: assignedEmployeeUids }
-        }).select('employeeUid fullName').lean();
+        if (assignmentType === 'retailer') {
+          task.assignedEmployees = [];
+          task.assignedToName = 'Retailer';
+          task.assignedToUid = retailerId;
+        } else if (assignmentType === 'myself' && actor.role === 'employee') {
+          task.assignedEmployees = [{
+            employeeUid: actor.uid,
+            employeeName: actor.name,
+            assignedAt: new Date()
+          }];
+          task.assignedToName = actor.name;
+          task.assignedToUid = actor.uid;
+          task.assignmentType = 'employee';
+        } else if (assignmentType === 'myself') {
+          task.assignedEmployees = [];
+          task.assignedToName = 'Retailer';
+          task.assignedToUid = retailerId;
+        } else if (assignmentType === 'employee' && Array.isArray(assignedEmployeeUids)) {
+          const emps = await Employee.find({
+            retailerId,
+            employeeUid: { $in: assignedEmployeeUids }
+          }).select('employeeUid fullName').lean();
 
-        task.assignedEmployees = emps.map(e => ({
-          employeeUid: e.employeeUid,
-          employeeName: e.fullName,
-          assignedAt: new Date()
-        }));
-        task.assignedToName = task.assignedEmployees.map(e => e.employeeName).join(', ');
-        task.assignedToUid = task.assignedEmployees.map(e => e.employeeUid).join(', ');
-      }
+          if (emps.length > 0) {
+            task.assignedEmployees = emps.map(e => ({
+              employeeUid: e.employeeUid,
+              employeeName: e.fullName,
+              assignedAt: new Date()
+            }));
+            task.assignedToName = task.assignedEmployees.map(e => e.employeeName).join(', ');
+            task.assignedToUid = task.assignedEmployees.map(e => e.employeeUid).join(', ');
+          }
+        }
 
-      if (oldAssignee !== task.assignedToName) {
-        task.assignmentHistory.push({
-          fromAssignee: oldAssignee,
-          toAssignee: task.assignedToName,
-          reassignedAt: new Date(),
-          reassignedBy: actor.name
-        });
+        if (oldAssignee !== task.assignedToName) {
+          task.assignmentHistory.push({
+            fromAssignee: oldAssignee,
+            toAssignee: task.assignedToName,
+            reassignedAt: new Date(),
+            reassignedBy: actor.name
+          });
+        }
       }
     }
 
@@ -796,11 +855,12 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
-    // Role check: employees can only update their own assigned tasks
+    // Role check: employees can only update their own assigned tasks or tasks they created
     if (actor.role === 'employee') {
       const isAssigned = (task.assignedEmployees && task.assignedEmployees.some(e => e.employeeUid === actor.uid)) ||
                          task.assignedToUid === actor.uid;
-      if (!isAssigned) {
+      const isCreator = (task.createdBy && task.createdBy.uid === actor.uid) || task.createdByUid === actor.uid;
+      if (!isAssigned && !isCreator) {
         return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this task' });
       }
     }
