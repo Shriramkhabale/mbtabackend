@@ -123,7 +123,13 @@ router.get('/calendar', async (req, res) => {
       });
     } else if (employeeUid && employeeUid.trim() && employeeUid !== 'ALL') {
       if (employeeUid === 'myself') {
-        andConditions.push({ assignmentType: 'myself' });
+        andConditions.push({
+          $or: [
+            { assignmentType: 'myself' },
+            { assignmentType: 'retailer' },
+            { assignedToUid: retailerId }
+          ]
+        });
       } else {
         andConditions.push({
           $or: [
@@ -382,14 +388,25 @@ router.get('/', async (req, res) => {
       ];
     } else {
       if (view === 'my_tasks') {
-        filter.assignmentType = 'myself';
+        filter.$or = [
+          { assignmentType: 'myself' },
+          { assignmentType: 'retailer' },
+          { assignedToUid: retailerId }
+        ];
       } else if (view === 'assigned') {
-        filter.assignmentType = 'employee';
+        filter.$or = [
+          { assignmentType: 'employee' },
+          { 'assignedEmployees.0': { $exists: true } }
+        ];
       }
 
       if (employeeUid && employeeUid.trim() && employeeUid !== 'ALL') {
         if (employeeUid === 'myself') {
-          filter.assignmentType = 'myself';
+          filter.$or = [
+            { assignmentType: 'myself' },
+            { assignmentType: 'retailer' },
+            { assignedToUid: retailerId }
+          ];
         } else {
           filter.$or = [
             { 'assignedEmployees.employeeUid': employeeUid.trim() },
@@ -481,10 +498,18 @@ router.get('/', async (req, res) => {
         { createdByUid: actor.uid }
       ];
     }
+    const myTasksCountFilter = actor.role === 'employee'
+      ? { ...baseCountFilter, $or: [{ 'assignedEmployees.employeeUid': actor.uid }, { assignedToUid: actor.uid }] }
+      : { ...baseCountFilter, $or: [{ assignmentType: 'myself' }, { assignmentType: 'retailer' }, { assignedToUid: retailerId }] };
+
+    const assignedTasksCountFilter = actor.role === 'employee'
+      ? { ...baseCountFilter, $or: [{ 'createdBy.uid': actor.uid }, { createdByUid: actor.uid }] }
+      : { ...baseCountFilter, $or: [{ assignmentType: 'employee' }, { 'assignedEmployees.0': { $exists: true } }] };
+
     const [allCount, myCount, assignedCount, compCount, pendCount, inProgCount, ovCount] = await Promise.all([
       Task.countDocuments(baseCountFilter),
-      Task.countDocuments({ ...baseCountFilter, assignmentType: 'myself' }),
-      Task.countDocuments({ ...baseCountFilter, assignmentType: 'employee' }),
+      Task.countDocuments(myTasksCountFilter),
+      Task.countDocuments(assignedTasksCountFilter),
       Task.countDocuments({ ...baseCountFilter, workStatus: 'Completed' }),
       Task.countDocuments({ ...baseCountFilter, workStatus: { $in: ['Not Started', 'In Progress', 'On Hold'] } }),
       Task.countDocuments({ ...baseCountFilter, workStatus: 'In Progress' }),
@@ -736,6 +761,31 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
+    // Role check: employees can only edit tasks they created or are assigned to
+    if (actor.role === 'employee') {
+      const isAssigned = (task.assignedEmployees && task.assignedEmployees.some(e => e.employeeUid === actor.uid)) ||
+                         task.assignedToUid === actor.uid;
+      const isCreator = (task.createdBy && task.createdBy.uid === actor.uid) || task.createdByUid === actor.uid;
+      if (!isAssigned && !isCreator) {
+        return res.status(403).json({ success: false, message: 'Access denied: You cannot edit this task' });
+      }
+    } else if (actor.role === 'retailer') {
+      // Retailer can only edit when involved in the task
+      const isCreator = task.createdByRole === 'retailer' ||
+                        (task.createdBy && task.createdBy.role === 'retailer') ||
+                        task.createdByUid === retailerId ||
+                        (task.createdBy && task.createdBy.uid === retailerId);
+      const isAssignee = task.assignmentType === 'retailer' ||
+                         task.assignmentType === 'myself' ||
+                         task.assignedToUid === retailerId;
+      if (!isCreator && !isAssignee) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: Retailer cannot edit tasks between employees when not directly involved'
+        });
+      }
+    }
+
     const {
       title,
       description,
@@ -862,6 +912,21 @@ router.patch('/:id/status', async (req, res) => {
       if (!isAssigned && !isCreator) {
         return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this task' });
       }
+    } else if (actor.role === 'retailer') {
+      // Retailer can only update status when involved in the task
+      const isCreator = task.createdByRole === 'retailer' ||
+                        (task.createdBy && task.createdBy.role === 'retailer') ||
+                        task.createdByUid === retailerId ||
+                        (task.createdBy && task.createdBy.uid === retailerId);
+      const isAssignee = task.assignmentType === 'retailer' ||
+                         task.assignmentType === 'myself' ||
+                         task.assignedToUid === retailerId;
+      if (!isCreator && !isAssignee) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: Retailer cannot update status of tasks between employees when not directly involved'
+        });
+      }
     }
 
     const oldStatus = task.workStatus;
@@ -936,10 +1001,28 @@ router.delete('/:id', async (req, res) => {
       query.taskId = id;
     }
 
-    const result = await Task.findOneAndDelete(query);
-    if (!result) {
+    const task = await Task.findOne(query);
+    if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
+
+    if (actor.role === 'retailer') {
+      const isCreator = task.createdByRole === 'retailer' ||
+                        (task.createdBy && task.createdBy.role === 'retailer') ||
+                        task.createdByUid === retailerId ||
+                        (task.createdBy && task.createdBy.uid === retailerId);
+      const isAssignee = task.assignmentType === 'retailer' ||
+                         task.assignmentType === 'myself' ||
+                         task.assignedToUid === retailerId;
+      if (!isCreator && !isAssignee) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: Retailer cannot delete tasks between employees when not directly involved'
+        });
+      }
+    }
+
+    await Task.deleteOne({ _id: task._id });
 
     res.json({ success: true, message: 'Task deleted successfully' });
   } catch (err) {
