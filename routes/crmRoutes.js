@@ -2698,4 +2698,10 @@ router.use('/employee-activities', (req, res, next) => {
   employeeRoutes(req, res, next);
 });
 
+// ======================================================================
+// 8. TASK MANAGEMENT MODULE ROUTER (Retailer-Wise Private)
+// ======================================================================
+const taskRoutes = require('./taskRoutes');
+router.use('/tasks', taskRoutes);
+
 module.exports = router;
