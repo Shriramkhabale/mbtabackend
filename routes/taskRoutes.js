@@ -162,7 +162,6 @@ router.get('/calendar', async (req, res) => {
     const filter = andConditions.length === 1 ? andConditions[0] : { $and: andConditions };
 
     const tasks = await Task.find(filter)
-      .select('taskId title category startDate dueDate startTime dueTime priority workStatus assignmentType assignedEmployees assignedToName assignedToUid')
       .sort({ dueDate: 1, dueTime: 1 })
       .lean();
 
