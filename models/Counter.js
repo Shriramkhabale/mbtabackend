@@ -324,6 +324,54 @@ async function getNextRetailerEmployeeUid(retailerId) {
     return `${cleanId}-EMP${padded}`;
 }
 
+/**
+ * Generates an atomic sequential Task ID per retailer: e.g. MBTAR000010101-TSK0001
+ * Synchronizes with highest existing taskId in database if present.
+ */
+async function getNextTaskId(retailerId = 'MBTAR000010101') {
+    const cleanId = String(retailerId || 'MBTAR000010101').trim();
+    const counterId = `task_id_${cleanId}`;
+
+    let maxSeq = 0;
+    try {
+        const Task = mongoose.models.Task || require('./Task');
+        const tasks = await Task.find({ retailerId: cleanId }).select('taskId').lean();
+        const regex = new RegExp(`^${cleanId}-TSK(\\d+)$`, 'i');
+        for (const t of tasks) {
+            const match = t.taskId && t.taskId.match(regex);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num > maxSeq) maxSeq = num;
+            }
+        }
+    } catch (err) {
+        // Task model not yet registered or collection empty
+    }
+
+    const currentCounter = await Counter.findById(counterId);
+    if (!currentCounter) {
+        await Counter.findByIdAndUpdate(
+            counterId,
+            { $setOnInsert: { seq: maxSeq } },
+            { upsert: true }
+        );
+    } else if (maxSeq > currentCounter.seq) {
+        await Counter.findByIdAndUpdate(
+            counterId,
+            { seq: maxSeq }
+        );
+    }
+
+    const res = await Counter.findOneAndUpdate(
+        { _id: counterId },
+        { $inc: { seq: 1 } },
+        { returnDocument: 'after', upsert: true }
+    );
+
+    const padded = String(res.seq).padStart(4, '0');
+    return `${cleanId}-TSK${padded}`;
+}
+
 module.exports = {
     Counter,
     getNextRetailerUid,
@@ -338,5 +386,6 @@ module.exports = {
     getNextMoneyTransactionId,
     getNextExpenseId,
     getNextRetailerEmployeeUid,
+    getNextTaskId,
     rollbackSequence
 };
